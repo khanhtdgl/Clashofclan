@@ -1,25 +1,277 @@
+<html lang="vi">
 
-<!doctype html><html lang="vi"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>COC Timer</title><style>
-body{font-family:Arial;max-width:500px;margin:auto;padding:16px;background:#f3f3f3}
-.row{background:#fff;padding:10px;margin:8px 0;border-radius:8px}
-input{width:120px} button{margin-left:4px}
-.time{font-weight:bold}
-</style><body><h2>COC Timer</h2><div id="app"></div>
-<script>
-const names=[...Array(6)].map((_,i)=>"Thợ "+(i+1)).concat(["Nghiên cứu","Linh thú"]);
-const app=document.getElementById('app');
-function ms(t){let g=x=>+((t.match(new RegExp("(\\d+)"+x))||[,0])[1]);return ((((g('d')*24+g('h'))*60+g('m'))*60+g('s'))*1000}
-names.forEach((n,i)=>{
- let d=document.createElement('div');d.className='row';
- d.innerHTML=`<b>${n}</b><br><input placeholder="2d18h"><button>Bắt đầu</button><button>Đặt lại</button><div class=time></div>`;
- app.appendChild(d);
- let inp=d.querySelector('input'),out=d.querySelector('.time');
- let key='t'+i;
- function start(end){localStorage[key]=end; tick(); clearInterval(d.iv); d.iv=setInterval(tick,1000);}
- function tick(){let end=+localStorage[key]; if(!end)return; let r=end-Date.now(); if(r<=0){out.textContent="Hoàn thành!";localStorage.removeItem(key);clearInterval(d.iv);return;} let s=Math.floor(r/1000),dd=Math.floor(s/86400);s%=86400;let h=Math.floor(s/3600);s%=3600;let m=Math.floor(s/60);s%=60;out.textContent=`${dd}d ${h}h ${m}m ${s}s`;}
- d.querySelectorAll('button')[0].onclick=()=>start(Date.now()+ms(inp.value));
- d.querySelectorAll('button')[1].onclick=()=>{localStorage.removeItem(key);out.textContent='';inp.value='';clearInterval(d.iv);}
- if(localStorage[key]) start(+localStorage[key]);
-});
-</script></body></html>
+<head>
+
+  <meta charset="UTF-8" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>COC Upgrade Timer</title>
+
+  <style>
+
+    body {
+
+      font-family: Arial, sans-serif;
+
+      background: #20242b;
+
+      color: white;
+
+      max-width: 500px;
+
+      margin: auto;
+
+      padding: 16px;
+
+    }
+
+    h1 {
+
+      text-align: center;
+
+      margin-bottom: 20px;
+
+    }
+
+    .card {
+
+      background: #2d333b;
+
+      border-radius: 10px;
+
+      padding: 12px;
+
+      margin: 10px 0;
+
+    }
+
+    .label {
+
+      font-weight: bold;
+
+      margin-bottom: 8px;
+
+    }
+
+    input {
+
+      width: 130px;
+
+      padding: 6px;
+
+      border-radius: 6px;
+
+      border: none;
+
+      margin-right: 6px;
+
+    }
+
+    button {
+
+      padding: 6px 10px;
+
+      border: none;
+
+      border-radius: 6px;
+
+      cursor: pointer;
+
+      margin-right: 4px;
+
+    }
+
+    .start {
+
+      background: #28a745;
+
+      color: white;
+
+    }
+
+    .reset {
+
+      background: #dc3545;
+
+      color: white;
+
+    }
+
+    .time {
+
+      margin-top: 8px;
+
+      font-size: 18px;
+
+      font-weight: bold;
+
+      color: #7CFC00;
+
+    }
+
+  </style>
+
+</head>
+
+<body>
+
+  <h1>COC Upgrade Timer</h1>
+
+  <div id="app"></div>
+
+  <script>
+
+    const items = [
+
+      "Thợ 1",
+
+      "Thợ 2",
+
+      "Thợ 3",
+
+      "Thợ 4",
+
+      "Thợ 5",
+
+      "Thợ 6",
+
+      "Nghiên cứu",
+
+      "Linh thú"
+
+    ];
+
+    const app = document.getElementById("app");
+
+    function parseTime(txt) {
+
+      const d = +(txt.match(/(\d+)d/) || [,0])[1];
+
+      const h = +(txt.match(/(\d+)h/) || [,0])[1];
+
+      const m = +(txt.match(/(\d+)m/) || [,0])[1];
+
+      const s = +(txt.match(/(\d+)s/) || [,0])[1];
+
+      return (((d * 24 + h) * 60 + m) * 60 + s) * 1000;
+
+    }
+
+    items.forEach((name, i) => {
+
+      const card = document.createElement("div");
+
+      card.className = "card";
+
+      card.innerHTML = `
+
+        <div class="label">${name}</div>
+
+        <input type="text" placeholder="2d18h6m">
+
+        <button class="start">Bắt đầu</button>
+
+        <button class="reset">Xóa</button>
+
+        <div class="time"></div>
+
+      `;
+
+      app.appendChild(card);
+
+      const input = card.querySelector("input");
+
+      const timeDiv = card.querySelector(".time");
+
+      const startBtn = card.querySelector(".start");
+
+      const resetBtn = card.querySelector(".reset");
+
+      const key = "timer_" + i;
+
+      let interval;
+
+      function update() {
+
+        const end = +localStorage.getItem(key);
+
+        if (!end) return;
+
+        let remain = end - Date.now();
+
+        if (remain <= 0) {
+
+          timeDiv.textContent = "✅ Hoàn thành";
+
+          localStorage.removeItem(key);
+
+          clearInterval(interval);
+
+          return;
+
+        }
+
+        let total = Math.floor(remain / 1000);
+
+        const d = Math.floor(total / 86400);
+
+        total %= 86400;
+
+        const h = Math.floor(total / 3600);
+
+        total %= 3600;
+
+        const m = Math.floor(total / 60);
+
+        const s = total % 60;
+
+        timeDiv.textContent = `${d}d ${h}h ${m}m ${s}s`;
+
+      }
+
+      startBtn.onclick = () => {
+
+        const ms = parseTime(input.value);
+
+        if (!ms) return;
+
+        const end = Date.now() + ms;
+
+        localStorage.setItem(key, end);
+
+        clearInterval(interval);
+
+        update();
+
+        interval = setInterval(update, 1000);
+
+      };
+
+      resetBtn.onclick = () => {
+
+        localStorage.removeItem(key);
+
+        clearInterval(interval);
+
+        timeDiv.textContent = "";
+
+        input.value = "";
+
+      };
+
+      if (localStorage.getItem(key)) {
+
+        update();
+
+        interval = setInterval(update, 1000);
+
+      }
+
+    });
+
+  </script>
+
+</body>
+
+</html>
