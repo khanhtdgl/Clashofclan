@@ -3,166 +3,218 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CoC Tiến Độ Nâng Cấp</title>
+    <title>CoC Phòng Giám Sát Tiến Độ</title>
     <style>
         :root {
-            --bg-main: #0f172a;
-            --bg-card: #1e293b;
-            --border-color: #334155;
-            --text-main: #f8fafc;
-            --text-muted: #94a3b8;
-            --gold: #f59e0b;
-            --elixir: #d946ef;
-            --dark-elixir: #6366f1;
-            --time-color: #ef4444;
-            --success: #10b981;
+            --bg-body: #090d16;
+            --bg-card: #131926;
+            --bg-item: #1b2336;
+            --border: #26334d;
+            --gold: #ffb703;
+            --gold-glow: rgba(255, 183, 3, 0.15);
+            --elixir: #ff00aa;
+            --dark-elixir: #00e5ff;
+            --text-main: #f1f5f9;
+            --text-muted: #64748b;
+            --danger: #ff4757;
+            --success: #2ed573;
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background-color: var(--bg-main);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg-body);
             color: var(--text-main);
-            padding: 16px;
-            max-width: 900px;
-            margin: 0 auto;
-            line-height: 1.5;
+            margin: 0;
+            padding: 20px;
         }
 
-        h1 {
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        header {
             text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: linear-gradient(135deg, #1e293b, #0f172a);
+            border-radius: 16px;
+            border: 1px solid var(--border);
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 26px;
+            letter-spacing: 2px;
             color: var(--gold);
-            font-size: 24px;
-            font-weight: 800;
-            margin-bottom: 5px;
+            text-transform: uppercase;
+            text-shadow: 0 0 10px var(--gold-glow);
+        }
+
+        .player-tag {
+            display: inline-block;
+            margin-top: 8px;
+            font-family: monospace;
+            background: #000;
+            padding: 4px 12px;
+            border-radius: 20px;
+            color: var(--dark-elixir);
+            font-size: 14px;
+            border: 1px solid #1e293b;
+        }
+
+        .section-title {
+            font-size: 18px;
             text-transform: uppercase;
             letter-spacing: 1px;
-        }
-
-        .tag-account {
-            text-align: center;
-            color: var(--text-muted);
-            font-family: monospace;
-            font-size: 14px;
-            margin-bottom: 25px;
-        }
-
-        .village-section {
-            margin-bottom: 35px;
-        }
-
-        .village-title {
-            font-size: 18px;
+            margin: 30px 0 15px 0;
             color: var(--text-main);
-            border-left: 4px solid var(--gold);
-            padding-left: 10px;
-            margin-bottom: 15px;
-            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
 
-        .village-section:nth-of-type(2) .village-title {
-            border-left-color: var(--dark-elixir);
+        .section-title::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: var(--border);
         }
 
-        .grid-container {
+        .grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 16px;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
         }
 
         .card {
             background-color: var(--bg-card);
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
-            padding: 16px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 20px;
+            box-shadow: 0 10px 25px -5px rgba(0,0,0,0.3);
         }
 
-        .card h3 {
-            margin-top: 0;
-            margin-bottom: 15px;
-            font-size: 15px;
-            font-weight: 600;
-            color: var(--text-muted);
+        .card-header {
+            font-size: 14px;
+            font-weight: 700;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
+            color: var(--text-muted);
+            margin-bottom: 15px;
             display: flex;
             align-items: center;
-            justify-content: space-between;
+            gap: 8px;
         }
 
-        .card h3::after {
-            content: '';
-            display: inline-block;
+        .card-header .dot {
             width: 8px;
             height: 8px;
             border-radius: 50%;
             background-color: var(--gold);
         }
-        .card.lab h3::after { background-color: var(--elixir); }
-        .card.pet h3::after { background-color: var(--dark-elixir); }
+        .card.lab .dot { background-color: var(--elixir); }
+        .card.pet .dot { background-color: var(--dark-elixir); }
 
-        .list-item {
-            background: rgba(15, 23, 42, 0.4);
-            border: 1px solid rgba(255,255,255,0.05);
-            padding: 12px;
-            border-radius: 8px;
-            margin-bottom: 10px;
+        .item-row {
+            background-color: var(--bg-item);
+            border: 1px solid rgba(255,255,255,0.02);
+            border-radius: 10px;
+            padding: 12px 16px;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: transform 0.2s;
+        }
+
+        .item-row:hover {
+            transform: translateX(3px);
+            border-color: rgba(255,255,255,0.08);
+        }
+
+        .item-meta {
             display: flex;
             flex-direction: column;
             gap: 4px;
         }
 
-        .list-item:last-child { margin-bottom: 0; }
-
-        .item-info {
+        .item-name-box {
             display: flex;
-            justify-content: space-between;
             align-items: center;
+            gap: 8px;
+        }
+
+        .item-name {
+            font-weight: 600;
+            color: #fff;
             font-size: 14px;
         }
 
-        .item-name { font-weight: 600; color: #fff; }
-        .item-lvl { color: var(--text-muted); font-size: 12px; margin-left: 5px; }
-        
-        .item-time {
-            font-weight: 700;
-            color: var(--time-color);
-            font-family: monospace;
-            font-size: 14px;
-            background: rgba(239, 68, 68, 0.1);
+        .btn-edit {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 11px;
             padding: 2px 6px;
             border-radius: 4px;
+            background: rgba(255,255,255,0.05);
+        }
+        .btn-edit:hover {
+            color: var(--gold);
+            background: rgba(255,255,255,0.1);
         }
 
-        .status-empty {
+        .badge-lvl {
+            background-color: #0f172a;
+            color: var(--gold);
+            border: 1px solid rgba(255,183,3,0.3);
+            font-size: 11px;
+            padding: 1px 6px;
+            border-radius: 6px;
+            font-weight: bold;
+        }
+
+        .countdown {
+            font-family: 'Courier New', Courier, monospace;
+            font-weight: 700;
+            font-size: 14px;
+            color: var(--danger);
+            background: rgba(255, 71, 87, 0.1);
+            border: 1px solid rgba(255, 71, 87, 0.15);
+            padding: 4px 10px;
+            border-radius: 6px;
+            text-shadow: 0 0 5px rgba(255, 71, 87, 0.2);
+            white-space: nowrap;
+        }
+
+        .empty-state {
             color: var(--text-muted);
+            text-align: center;
             font-style: italic;
             font-size: 13px;
-            text-align: center;
-            padding: 15px 0;
+            padding: 20px 0;
         }
 
-        /* KHU VỰC NHẬP JSON */
-        .json-area {
-            margin-top: 40px;
+        /* KHU VỰC PANEL DATA */
+        .data-panel {
+            margin-top: 50px;
             background-color: var(--bg-card);
-            border: 1px dashed var(--border-color);
-            border-radius: 12px;
+            border: 1px dashed var(--border);
+            border-radius: 14px;
             padding: 20px;
         }
-        .json-area h3 { color: var(--text-main); margin-top: 0; font-size: 16px;}
-        
-        textarea {
+
+        .data-panel textarea {
             width: 100%;
-            background-color: var(--bg-main);
-            color: #34d399;
-            border: 1px solid var(--border-color);
+            background-color: var(--bg-body);
+            border: 1px solid var(--border);
             border-radius: 8px;
+            color: var(--success);
             padding: 12px;
-            box-sizing: border-box;
             font-family: monospace;
             font-size: 12px;
-            resize: vertical;
+            box-sizing: border-box;
         }
 
         .btn-group {
@@ -171,68 +223,77 @@
             gap: 10px;
         }
 
-        button {
-            padding: 10px 16px;
+        button.main-btn {
+            background-color: var(--gold);
+            color: #000;
             border: none;
+            padding: 10px 20px;
+            font-weight: 700;
             border-radius: 6px;
             cursor: pointer;
-            font-weight: 600;
             font-size: 13px;
-            transition: all 0.2s;
         }
+        button.main-btn:hover { opacity: 0.9; }
 
-        .btn-primary { background-color: var(--gold); color: #000; }
-        .btn-primary:hover { opacity: 0.9; }
-        .btn-secondary { background-color: transparent; color: var(--text-muted); border: 1px solid var(--border-color); }
-        .btn-secondary:hover { background: rgba(255,255,255,0.05); color: #fff; }
+        button.sub-btn {
+            background: transparent;
+            color: var(--text-muted);
+            border: 1px solid var(--border);
+            padding: 10px 20px;
+            font-weight: 600;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+        }
+        button.sub-btn:hover { color: #fff; background: rgba(255,255,255,0.02); }
     </style>
 </head>
 <body>
 
-    <h1>Tiến Độ Nâng Cấp CoC</h1>
-    <div class="tag-account" id="account-tag">#PLAYER_TAG</div>
+    <div class="container">
+        <header>
+            <h1 id="web-title">Hệ Thống Giám Sát Tiến Độ CoC</h1>
+            <div class="player-tag" id="player-tag">#PLAYER_TAG</div>
+        </header>
 
-    <!-- HẠNG MỤC LÀNG CHÍNH -->
-    <div class="village-section">
-        <div class="village-title">Làng Chính (Home Village)</div>
-        <div class="grid-container">
+        <!-- LÀNG CHÍNH -->
+        <div class="section-title">Làng Chính (Home Village)</div>
+        <div class="grid">
             <div class="card">
-                <h3>Thợ Xây Đang Làm</h3>
-                <div id="home-builders"></div>
+                <div class="card-header"><span class="dot"></span>Thợ xây đang làm việc</div>
+                <div id="box-home-builders"></div>
             </div>
             <div class="card lab">
-                <h3>Phòng Thí Nghiệm</h3>
-                <div id="home-lab"></div>
+                <div class="card-header"><span class="dot"></span>Phòng Thí Nghiệm</div>
+                <div id="box-home-lab"></div>
             </div>
             <div class="card pet">
-                <h3>Nhà Linh Thú</h3>
-                <div id="home-pets"></div>
+                <div class="card-header"><span class="dot"></span>Nhà Linh Thú</div>
+                <div id="box-home-pets"></div>
             </div>
         </div>
-    </div>
 
-    <!-- HẠNG MỤC LÀNG THỢ XÂY -->
-    <div class="village-section">
-        <div class="village-title">Làng Thợ Xây (Builder Base)</div>
-        <div class="grid-container">
+        <!-- LÀNG THỢ XÂY -->
+        <div class="section-title">Làng Thợ Xây (Builder Base)</div>
+        <div class="grid">
             <div class="card">
-                <h3>Thợ Xây Đang Làm</h3>
-                <div id="builder-builders"></div>
+                <div class="card-header"><span class="dot"></span>Thợ xây công trình</div>
+                <div id="box-builder-builders"></div>
             </div>
             <div class="card lab">
-                <h3>Phòng Thí Nghiệm Sao</h3>
-                <div id="builder-lab"></div>
+                <div class="card-header"><span class="dot"></span>Phòng Thí Nghiệm Sao</div>
+                <div id="box-builder-lab"></div>
             </div>
         </div>
-    </div>
 
-    <!-- KHU VỰC CẬP NHẬT NHANH -->
-    <div class="json-area">
-        <h3>Dán Dữ Liệu JSON Mới</h3>
-        <textarea id="json-input" rows="5" placeholder="Dán chuỗi dữ liệu mã hóa từ file game vào đây..."></textarea>
-        <div class="btn-group">
-            <button class="btn-primary" onclick="saveNewJson()">Cập Nhật Ngay</button>
-            <button class="btn-secondary" onclick="clearLocalData()">Dùng File Gốc GitHub</button>
+        <!-- PANEL UPDATE DỮ LIỆU -->
+        <div class="data-panel">
+            <h3 style="margin-top:0; font-size:15px; color: var(--gold);">Cập nhật dữ liệu tài khoản (JSON)</h3>
+            <textarea id="json-textarea" rows="4" placeholder="Dán chuỗi dữ liệu JSON mới vào đây..."></textarea>
+            <div class="btn-group">
+                <button class="main-btn" onclick="updateJsonData()">Cập Nhật Ngay</button>
+                <button class="sub-btn" onclick="resetToDefault()">Xóa & Dùng File Gốc</button>
+            </div>
         </div>
     </div>
 
