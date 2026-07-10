@@ -7,18 +7,21 @@
     <style>
         :root { --bg: #0b0e14; --card: #161b22; --accent: #e67e22; --text: #c9d1d9; }
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 10px; font-size: 13px; }
-        #dashboard { max-width: 100%; margin-bottom: 120px; }
-        .summary-card { background: #1c2128; border-radius: 8px; padding: 10px; margin-bottom: 20px; border: 1px solid #30363d; }
-        .summary-row { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid #2d333b; }
-        .summary-label { color: #8b949e; }
-        .summary-time { font-family: monospace; color: #fff; font-weight: bold; }
-        .group-header { display: flex; justify-content: space-between; align-items: center; color: var(--accent); font-size: 0.85em; font-weight: bold; margin: 15px 5px 8px 5px; text-transform: uppercase; border-bottom: 1px solid #30363d; padding-bottom: 5px; }
+        #view-switch { display: flex; gap: 10px; margin-bottom: 15px; }
+        .tab-btn { flex: 1; padding: 10px; background: #232933; border: none; color: #fff; border-radius: 5px; font-weight: bold; }
+        .tab-btn.active { background: var(--accent); color: #000; }
+        
+        .view { display: none; margin-bottom: 120px; }
+        .view.active { display: block; }
+        
         .card { background: var(--card); border-radius: 8px; padding: 10px; margin-bottom: 6px; border-left: 4px solid var(--accent); }
-        .flex-row { display: flex; justify-content: space-between; align-items: center; }
-        .b-name { font-weight: bold; color: #fff; }
-        .timer { font-family: 'Courier New', monospace; font-size: 1em; color: #fff; }
-        .progress-container { background: #0d1117; height: 5px; border-radius: 3px; margin-top: 6px; overflow: hidden; }
-        .progress-bar { background: var(--accent); height: 100%; width: 0%; transition: width 0.5s; }
+        .b-name { font-weight: bold; color: #fff; font-size: 1.1em; }
+        .b-id { font-size: 0.8em; color: #8b949e; font-family: monospace; }
+        
+        .input-row { display: flex; gap: 5px; margin-bottom: 10px; }
+        input { flex: 1; background: #0d1117; border: 1px solid #30363d; color: #fff; padding: 8px; border-radius: 4px; }
+        .btn-small { padding: 8px; background: var(--accent); border: none; border-radius: 4px; font-weight: bold; }
+        
         #input-zone { position: fixed; bottom: 0; left: 0; width: 100%; background: #1c2128; padding: 12px; box-sizing: border-box; border-top: 1px solid #30363d; z-index: 100; }
         textarea { width: 100%; height: 45px; background: #0d1117; border: 1px solid #30363d; color: #fff; border-radius: 5px; padding: 8px; box-sizing: border-box; font-size: 13px; }
         .btn-update { width: 100%; margin-top: 8px; padding: 8px; background: var(--accent); border: none; color: #000; font-weight: bold; border-radius: 5px; }
@@ -26,22 +29,76 @@
 </head>
 <body>
 
-<div id="dashboard">
-    <div class="group-header">TỔNG QUAN</div>
-    <div class="summary-card" id="summary-list"></div>
+<div id="view-switch">
+    <button class="tab-btn active" onclick="switchView('dash')">Dashboard</button>
+    <button class="tab-btn" onclick="switchView('config')">Cấu hình tên</button>
+</div>
+
+<div id="view-dash" class="view active">
     <div id="list"></div>
+</div>
+
+<div id="view-config" class="view">
+    <div class="card">
+        <h3>Thêm tên cho mã</h3>
+        <div class="input-row">
+            <input type="text" id="new-id" placeholder="Mã ID (vd: archerTower)">
+        </div>
+        <div class="input-row">
+            <input type="text" id="new-name" placeholder="Tên tiếng Việt">
+            <button class="btn-small" onclick="addMapping()">LƯU</button>
+        </div>
+        <hr style="border:0; border-top: 1px solid #30363d;">
+        <div id="mapping-list"></div>
+    </div>
 </div>
 
 <div id="input-zone">
     <textarea id="jsonInput" placeholder="Dán JSON vào đây..."></textarea>
-    <button class="btn-update" onclick="handleInput()">CẬP NHẬT TIẾN ĐỘ</button>
+    <button class="btn-update" onclick="handleInput()">CẬP NHẬT</button>
 </div>
 
 <script>
-    const nameMap = { "townHall": "Nhà chính", "archerTower": "Tháp Cung", "cannon": "Pháo", "wizardTower": "Tháp Phù Thủy", "airDefense": "Phòng thủ bay", "laboratory": "Phòng Lab", "petHouse": "Nhà linh thú" };
+    let nameMap = JSON.parse(localStorage.getItem('name_mapping') || '{}');
     const order = ["buildings", "units2", "pets", "buildings2"];
-    const groupTitles = { "buildings": "Làng chính", "units2": "Nghiên cứu", "pets": "Linh thú", "buildings2": "Làng thợ xây" };
     let dataGroups = {};
+
+    function switchView(v) {
+        document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+        document.getElementById('view-' + v).classList.add('active');
+        event.target.classList.add('active');
+        if (v === 'config') renderMapping();
+    }
+
+    function addMapping() {
+        const id = document.getElementById('new-id').value;
+        const name = document.getElementById('new-name').value;
+        if(id && name) {
+            nameMap[id] = name;
+            localStorage.setItem('name_mapping', JSON.stringify(nameMap));
+            renderMapping();
+            document.getElementById('new-id').value = '';
+            document.getElementById('new-name').value = '';
+        }
+    }
+
+    function deleteMapping(id) {
+        delete nameMap[id];
+        localStorage.setItem('name_mapping', JSON.stringify(nameMap));
+        renderMapping();
+    }
+
+    function renderMapping() {
+        const div = document.getElementById('mapping-list');
+        div.innerHTML = '';
+        Object.keys(nameMap).forEach(key => {
+            div.innerHTML += `<div class="flex-row" style="margin:5px 0">
+                <span><strong>${key}</strong>: ${nameMap[key]}</span>
+                <button class="btn-small" style="background:#555" onclick="deleteMapping('${key}')">X</button>
+            </div>`;
+        });
+    }
 
     function handleInput() {
         const raw = document.getElementById('jsonInput').value;
@@ -55,56 +112,34 @@
             const data = JSON.parse(raw);
             dataGroups = {};
             order.forEach(k => dataGroups[k] = []);
-
             Object.keys(dataGroups).forEach(cat => {
                 if (data[cat]) {
                     data[cat].forEach(item => {
                         if (item.timer) {
-                            // CẢI TIẾN: Ưu tiên lấy totalTime hoặc duration từ JSON
-                            // Nếu không có mới dùng timer + 10% (tránh lỗi null)
-                            const total = item.totalTime || item.duration || (item.timer * 1.1);
-                            const name = nameMap[item.id] || nameMap[item.name] || item.id || "Nâng cấp";
-                            dataGroups[cat].push({ name: name, timer: item.timer, total: total });
+                            // Ưu tiên tên đã mapping, không thì hiện ID
+                            const displayName = nameMap[item.id] || nameMap[item.name] || item.id || "Nâng cấp";
+                            dataGroups[cat].push({ id: item.id || item.name, name: displayName, timer: item.timer, total: item.totalTime || item.duration || (item.timer * 1.1) });
                         }
                     });
-                    dataGroups[cat].sort((a, b) => a.timer - b.timer);
                 }
             });
-            render();
-        } catch(e) { alert("JSON lỗi! Hãy kiểm tra lại format."); }
+            renderDash();
+        } catch(e) { alert("JSON lỗi!"); }
     }
 
-    function render() {
+    function renderDash() {
         const listDiv = document.getElementById('list');
-        const summaryDiv = document.getElementById('summary-list');
-        listDiv.innerHTML = ''; summaryDiv.innerHTML = '';
-        
+        listDiv.innerHTML = '';
         order.forEach(key => {
-            // Hiển thị tóm tắt
-            const sumRow = document.createElement('div');
-            sumRow.className = 'summary-row';
-            sumRow.innerHTML = `<span class="summary-label">${groupTitles[key]}</span><span class="summary-time" id="sum-${key}">--</span>`;
-            summaryDiv.appendChild(sumRow);
-
-            if (dataGroups[key].length > 0) {
-                const header = document.createElement('div');
-                header.className = 'group-header';
-                header.innerHTML = `<span>${groupTitles[key]}</span>`;
-                listDiv.appendChild(header);
-
-                dataGroups[key].forEach((item, index) => {
-                    const id = `${key}-${index}`;
-                    const percent = Math.min(100, Math.max(0, ((item.total - item.timer) / item.total) * 100));
-                    const div = document.createElement('div');
-                    div.className = 'card';
-                    div.innerHTML = `
-                        <div class="flex-row">
+            if (dataGroups[key] && dataGroups[key].length > 0) {
+                listDiv.innerHTML += `<div style="color:var(--accent); font-weight:bold; margin-top:10px">${key.toUpperCase()}</div>`;
+                dataGroups[key].forEach(item => {
+                    listDiv.innerHTML += `
+                        <div class="card">
                             <div class="b-name">${item.name}</div>
-                            <div class="timer" id="timer-${id}">${format(item.timer)}</div>
-                        </div>
-                        <div class="progress-container"><div class="progress-bar" id="bar-${id}" style="width:${percent}%"></div></div>
-                    `;
-                    listDiv.appendChild(div);
+                            <div class="b-id">Mã: ${item.id}</div>
+                            <div style="font-weight:bold">${format(item.timer)}</div>
+                        </div>`;
                 });
             }
         });
@@ -114,36 +149,8 @@
         if (s <= 0) return "Hoàn tất";
         const d = Math.floor(s / 86400);
         const h = Math.floor((s % 86400) / 3600);
-        const m = Math.floor((s % 3600) / 60);
-        let res = "";
-        if (d > 0) res += d + "d ";
-        res += `${h}h ${m}m ${s % 60}s`;
-        return res;
+        return (d>0 ? d+"d " : "") + h + "h " + Math.floor((s%3600)/60) + "m";
     }
-
-    // Interval cập nhật
-    setInterval(() => {
-        order.forEach(key => {
-            let minTime = Infinity;
-            dataGroups[key].forEach((item, index) => {
-                if (item.timer > 0) {
-                    item.timer--;
-                    const id = `${key}-${index}`;
-                    const el = document.getElementById(`timer-${id}`);
-                    if (el) el.innerText = format(item.timer);
-                    const bar = document.getElementById(`bar-${id}`);
-                    if (bar) {
-                        const percent = Math.min(100, Math.max(0, ((item.total - item.timer) / item.total) * 100));
-                        bar.style.width = `${percent}%`;
-                    }
-                }
-                if (item.timer < minTime) minTime = item.timer;
-            });
-            
-            const timeStr = minTime === Infinity ? "Xong" : format(minTime);
-            if(document.getElementById(`sum-${key}`)) document.getElementById(`sum-${key}`).innerText = timeStr;
-        });
-    }, 1000);
 
     window.onload = () => {
         const saved = localStorage.getItem('coc_data');
