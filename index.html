@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>CoC Real-time Tracker</title>
+    <title>CoC Pro - Adjust Time</title>
     <style>
         :root { --bg: #0b0e14; --card: #161b22; --accent: #e67e22; --text: #c9d1d9; }
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 10px; font-size: 13px; }
@@ -11,13 +11,15 @@
         .header-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
         .btn-danger { background: #552222; border: 1px solid #8b0000; color: #ff7b72; padding: 4px 8px; border-radius: 4px; font-size: 11px; cursor: pointer; }
         
+        .group-header { color: var(--accent); font-size: 0.85em; font-weight: bold; margin: 15px 0 5px 5px; display: flex; justify-content: space-between; align-items: center; }
+        .group-deadline { color: #58a6ff; font-weight: normal; font-size: 0.9em; }
+        .btn-adjust { padding: 2px 6px; background: #238636; border: none; color: white; border-radius: 3px; font-size: 10px; cursor: pointer; margin-left: 5px; }
+
         .card { background: var(--card); border-radius: 8px; padding: 12px; margin-bottom: 8px; border-left: 4px solid var(--accent); box-shadow: 0 4px 6px rgba(0,0,0,0.2); }
         .flex-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
         .b-name { font-weight: bold; color: #fff; font-size: 1.1em; }
-        .b-id { font-size: 0.75em; color: #8b949e; margin-bottom: 5px; font-family: monospace; }
         
         .btn-edit { padding: 4px 10px; background: #30363d; border: none; color: #aaa; border-radius: 4px; font-size: 11px; cursor: pointer; }
-        
         .live-timer { font-family: 'Courier New', monospace; font-weight: bold; font-size: 1.15em; color: #fff; }
         
         .progress-container { background: #0d1117; height: 5px; border-radius: 3px; margin-top: 6px; overflow: hidden; }
@@ -26,14 +28,12 @@
         #input-zone { position: fixed; bottom: 0; left: 0; width: 100%; background: #1c2128; padding: 10px; border-top: 1px solid #30363d; z-index: 100; box-sizing: border-box; }
         textarea { width: 100%; height: 45px; background: #0d1117; border: 1px solid #30363d; color: #fff; padding: 8px; border-radius: 5px; box-sizing: border-box; resize: none; }
         .btn-update { width: 100%; margin-top: 5px; padding: 10px; background: var(--accent); border: none; color: #000; font-weight: bold; border-radius: 5px; cursor: pointer; }
-
-        .empty-state { text-align: center; color: #8b949e; padding: 40px 20px; font-style: italic; background: #161b22; border-radius: 8px; margin-top: 20px; border: 1px dashed #30363d; }
     </style>
 </head>
 <body>
 
 <div class="header-bar">
-    <div style="font-weight:bold; color:var(--accent); text-transform: uppercase; letter-spacing: 0.5px;">Tiến độ nâng cấp</div>
+    <div style="font-weight:bold; color:var(--accent); text-transform: uppercase;">Tiến độ nâng cấp</div>
     <button class="btn-danger" onclick="resetAll()">Xóa JSON</button>
 </div>
 
@@ -47,41 +47,41 @@
 
 <script>
     let nameMap = JSON.parse(localStorage.getItem('name_mapping') || '{}');
+    let timeOffsets = JSON.parse(localStorage.getItem('time_offsets') || '{}');
     let appData = null;
-    let timerInterval = null;
     const order = ["buildings", "units2", "pets", "buildings2"];
     const titles = { "buildings": "Làng chính", "units2": "Phòng thí nghiệm", "pets": "Nhà linh thú", "buildings2": "Làng thợ xây" };
 
     function resetAll() {
-        if(confirm("Xóa dữ liệu JSON hiện tại?")) {
-            localStorage.removeItem('coc_data');
-            localStorage.removeItem('coc_sync_time');
-            location.reload();
-        }
+        if(confirm("Xóa tất cả?")) { localStorage.clear(); location.reload(); }
     }
 
     function handleInput() {
-        const raw = document.getElementById('jsonInput').value;
-        if (!raw) return;
         try {
-            const data = JSON.parse(raw);
+            const raw = document.getElementById('jsonInput').value;
             localStorage.setItem('coc_data', raw);
             localStorage.setItem('coc_sync_time', Date.now().toString());
-            processData(data);
+            processData(JSON.parse(raw));
         } catch(e) { alert("JSON lỗi!"); }
     }
 
-    function editName(id) {
-        const newName = prompt(`Đặt tên cho [${id}]:`, nameMap[id] || "");
-        if (newName !== null && newName.trim() !== "") {
-            nameMap[id] = newName.trim();
-            localStorage.setItem('name_mapping', JSON.stringify(nameMap));
+    function adjustGroupTime(key) {
+        const offset = prompt(`Chỉnh lệch thời gian cho ${titles[key]} (giây)\nVí dụ: nhập '60' để cộng 1 phút, '-60' để trừ 1 phút:`, timeOffsets[key] || "0");
+        if (offset !== null) {
+            timeOffsets[key] = parseInt(offset) || 0;
+            localStorage.setItem('time_offsets', JSON.stringify(timeOffsets));
             render();
         }
     }
 
-    function getRemaining(item) {
-        return Math.max(0, Math.floor((item.targetTime - Date.now()) / 1000));
+    function editName(id) {
+        const newName = prompt(`Đặt tên cho [${id}]:`, nameMap[id] || "");
+        if (newName !== null) { nameMap[id] = newName.trim(); localStorage.setItem('name_mapping', JSON.stringify(nameMap)); render(); }
+    }
+
+    function getRemaining(item, groupKey) {
+        const offset = timeOffsets[groupKey] || 0;
+        return Math.max(0, Math.floor((item.targetTime + (offset * 1000) - Date.now()) / 1000));
     }
 
     function processData(data) {
@@ -106,11 +106,19 @@
         listDiv.innerHTML = '';
         order.forEach(key => {
             if (appData[key]) {
-                const items = appData[key].filter(i => getRemaining(i) > 0);
+                const items = appData[key].filter(i => getRemaining(i, key) > 0);
                 if (items.length > 0) {
-                    listDiv.innerHTML += `<div style="color:var(--accent); font-size:0.8em; font-weight:bold; margin: 10px 0 5px 5px;">${titles[key]}</div>`;
+                    const earliest = new Date(Date.now() + getRemaining(items[0], key) * 1000);
+                    const deadlineStr = `${earliest.getHours()}:${String(earliest.getMinutes()).padStart(2, '0')}`;
+                    
+                    listDiv.innerHTML += `
+                        <div class="group-header">
+                            <span>${titles[key]} <button class="btn-adjust" onclick="adjustGroupTime('${key}')">Sửa Giờ</button></span>
+                            <span class="group-deadline">Xong lúc: ${deadlineStr}</span>
+                        </div>`;
+                    
                     items.forEach(item => {
-                        const rem = getRemaining(item);
+                        const rem = getRemaining(item, key);
                         const percent = Math.min(100, Math.max(0, ((item.total - rem) / item.total) * 100));
                         listDiv.innerHTML += `
                             <div class="card">
@@ -129,12 +137,13 @@
 
     setInterval(() => {
         if(!appData) return;
-        appData.buildings?.concat(appData.units2, appData.pets, appData.buildings2).forEach(item => {
-            if(!item) return;
-            const el = document.getElementById(`t-${item.uid}`);
-            const bar = document.getElementById(`b-${item.uid}`);
-            if(el) el.innerText = format(getRemaining(item));
-            if(bar) bar.style.width = Math.min(100, Math.max(0, ((item.total - getRemaining(item)) / item.total) * 100)) + '%';
+        order.forEach(key => {
+            appData[key]?.forEach(item => {
+                const el = document.getElementById(`t-${item.uid}`);
+                const bar = document.getElementById(`b-${item.uid}`);
+                if(el) el.innerText = format(getRemaining(item, key));
+                if(bar) bar.style.width = Math.min(100, Math.max(0, ((item.total - getRemaining(item, key)) / item.total) * 100)) + '%';
+            });
         });
     }, 1000);
 
