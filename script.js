@@ -1,3 +1,9 @@
+// =============================
+
+// COC TIMER - PHẦN 1
+
+// =============================
+
 const names = [
 
     "Thợ 1",
@@ -24,15 +30,9 @@ const summary = document.getElementById("summaryList");
 
 let timers = [];
 
-load();
+// Đọc dữ liệu đã lưu
 
-createCards();
-
-update();
-
-setInterval(update,60000);
-
-function load(){
+function loadData(){
 
     const data = localStorage.getItem("cocTimers");
 
@@ -54,7 +54,9 @@ function load(){
 
 }
 
-function save(){
+// Lưu dữ liệu
+
+function saveData(){
 
     localStorage.setItem(
 
@@ -65,6 +67,14 @@ function save(){
     );
 
 }
+
+loadData();
+
+// =============================
+
+// TẠO GIAO DIỆN
+
+// =============================
 
 function createCards(){
 
@@ -80,71 +90,103 @@ function createCards(){
 
         card.innerHTML=`
 
-        <h3>${item.name}</h3>
+            <h3>${item.name}</h3>
 
-        <div class="input-row">
+            <div class="input-row">
 
-            <div class="input-group">
+                <div class="input-group">
 
-                <label>Ngày</label>
+                    <label>Ngày</label>
 
-                <input type="number" id="d${index}" min="0">
+                    <input
+
+                        type="number"
+
+                        min="0"
+
+                        id="d${index}"
+
+                    >
+
+                </div>
+
+                <div class="input-group">
+
+                    <label>Giờ</label>
+
+                    <input
+
+                        type="number"
+
+                        min="0"
+
+                        max="23"
+
+                        id="h${index}"
+
+                    >
+
+                </div>
+
+                <div class="input-group">
+
+                    <label>Phút</label>
+
+                    <input
+
+                        type="number"
+
+                        min="0"
+
+                        max="59"
+
+                        id="m${index}"
+
+                    >
+
+                </div>
 
             </div>
 
-            <div class="input-group">
+            <div class="button-row">
 
-                <label>Giờ</label>
+                <button
 
-                <input type="number" id="h${index}" min="0" max="23">
+                    class="start"
+
+                    onclick="startTimer(${index})">
+
+                    ▶
+
+                </button>
+
+                <button
+
+                    class="reset"
+
+                    onclick="resetTimer(${index})">
+
+                    ✖
+
+                </button>
 
             </div>
 
-            <div class="input-group">
+            <div
 
-                <label>Phút</label>
+                class="time"
 
-                <input type="number" id="m${index}" min="0" max="59">
+                id="time${index}">
 
             </div>
 
-        </div>
+            <div
 
-        <div class="button-row">
+                class="finish"
 
-            <button class="start"
+                id="finish${index}">
 
-            onclick="startTimer(${index})">
-
-            ▶
-
-            </button>
-
-            <button class="reset"
-
-            onclick="resetTimer(${index})">
-
-            ✖
-
-            </button>
-
-        </div>
-
-        <div
-
-        class="time"
-
-        id="time${index}">
-
-        </div>
-
-        <div
-
-        class="finish"
-
-        id="finish${index}">
-
-        </div>
+            </div>
 
         `;
 
@@ -154,53 +196,85 @@ function createCards(){
 
 }
 
+createCards();
+
+// =============================
+
+// BẮT ĐẦU ĐẾM
+
+// =============================
+
 function startTimer(index){
 
-    const d=parseInt(
+    const d = parseInt(
 
         document.getElementById("d"+index).value
 
-    )||0;
+    ) || 0;
 
-    const h=parseInt(
+    const h = parseInt(
 
         document.getElementById("h"+index).value
 
-    )||0;
+    ) || 0;
 
-    const m=parseInt(
+    const m = parseInt(
 
         document.getElementById("m"+index).value
 
-    )||0;
+    ) || 0;
 
-    const total=((d*24+h)*60+m)*60000;
+    const totalMinutes =
 
-    if(total<=0){
+        d*1440 +
+
+        h*60 +
+
+        m;
+
+    if(totalMinutes<=0){
+
+        alert("Nhập thời gian!");
 
         return;
 
     }
 
-    timers[index].end=Date.now()+total;
+    timers[index].end =
 
-    save();
+        Date.now() +
+
+        totalMinutes*60000;
+
+    saveData();
 
     update();
 
 }
 
+// =============================
+
+// XÓA
+
+// =============================
+
 function resetTimer(index){
 
     timers[index].end=0;
 
-    save();
+    saveData();
 
     update();
 
-}function formatTime(ms){
+}// =============================
 
-    let total=Math.floor(ms/60000);
+// HÀM ĐỊNH DẠNG THỜI GIAN
+
+// =============================
+
+function formatTime(ms){
+
+    let total=Math.ceil(ms/60000);
 
     let d=Math.floor(total/1440);
 
@@ -210,17 +284,25 @@ function resetTimer(index){
 
     let m=total%60;
 
-    if(d>0) return d+"d "+h+"h";
+    if(d>0){
 
-    if(h>0) return h+"h "+m+"m";
+        return d+"d "+h+"h";
+
+    }
+
+    if(h>0){
+
+        return h+"h "+m+"m";
+
+    }
 
     return m+"m";
 
 }
 
-function finishTime(time){
+function finishTime(end){
 
-    const date=new Date(time);
+    const date=new Date(end);
 
     const day=String(date.getDate()).padStart(2,"0");
 
@@ -234,9 +316,15 @@ function finishTime(time){
 
 }
 
+// =============================
+
+// CẬP NHẬT GIAO DIỆN
+
+// =============================
+
 function update(){
 
-    let list=[];
+    let active=[];
 
     timers.forEach((item,index)=>{
 
@@ -258,35 +346,35 @@ function update(){
 
         }
 
-        let remain=item.end-Date.now();
+        const remain=item.end-Date.now();
 
         if(remain<=0){
 
-            time.innerHTML='<span class="done">✅ Hoàn thành</span>';
+            time.innerHTML="<span class='done'>✅ Hoàn thành</span>";
 
             finish.innerHTML="";
 
             timers[index].end=0;
 
-            save();
+            saveData();
 
             return;
 
         }
 
-        list.push({
+        active.push({
+
+            index:index,
 
             name:item.name,
 
-            remain:remain,
-
-            index:index
+            remain:remain
 
         });
 
         time.innerHTML="Còn: "+formatTime(remain);
 
-        finish.innerHTML="Hoàn thành lúc: "+finishTime(item.end);
+        finish.innerHTML="Hoàn thành: "+finishTime(item.end);
 
         if(remain<3600000){
 
@@ -294,17 +382,13 @@ function update(){
 
             time.className="time red";
 
-        }
-
-        else if(remain<86400000){
+        }else if(remain<86400000){
 
             card.classList.add("warning");
 
             time.className="time orange";
 
-        }
-
-        else{
+        }else{
 
             card.classList.add("running");
 
@@ -314,40 +398,48 @@ function update(){
 
     });
 
-    list.sort((a,b)=>a.remain-b.remain);
+    active.sort((a,b)=>a.remain-b.remain);
 
     summary.innerHTML="";
 
-    if(list.length===0){
+    if(active.length===0){
 
         summary.innerHTML="Chưa có bộ đếm nào.";
 
-        return;
+    }else{
+
+        active.forEach((item,pos)=>{
+
+            let medal="";
+
+            if(pos===0) medal="🥇";
+
+            else if(pos===1) medal="🥈";
+
+            else if(pos===2) medal="🥉";
+
+            summary.innerHTML+=`
+
+            <div class="summary-item"
+
+                 onclick="document.getElementById('card${item.index}').scrollIntoView({behavior:'smooth'})">
+
+                <span>${medal} ${item.name}</span>
+
+                <span>${formatTime(item.remain)}</span>
+
+            </div>
+
+            `;
+
+        });
 
     }
 
-    list.forEach((item,pos)=>{
-
-        let icon="";
-
-        if(pos===0) icon="🥇";
-
-        else if(pos===1) icon="🥈";
-
-        else if(pos===2) icon="🥉";
-
-        summary.innerHTML+=`
-
-        <div class="summary-item" onclick="document.getElementById('card${item.index}').scrollIntoView({behavior:'smooth'})">
-
-            <span>${icon} ${item.name}</span>
-
-            <span>${formatTime(item.remain)}</span>
-
-        </div>
-
-        `;
-
-    });
-
 }
+
+update();
+
+// Cập nhật mỗi phút
+
+setInterval(update,60000);
