@@ -2,45 +2,46 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CoC Status Dashboard</title>
+    <title>CoC Pro Dashboard</title>
     <style>
-        :root { --bg: #0b0e14; --card: #161b22; --accent: #e67e22; --text: #c9d1d9; }
+        :root { --bg: #0b0e14; --card: #161b22; --accent: #e67e22; --text: #c9d1d9; --header: #232933; }
         body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; }
-        
-        /* Dashboard Container */
         #dashboard { max-width: 700px; margin: 0 auto 150px auto; }
         
-        /* Progress Card */
-        .card { background: var(--card); border-radius: 8px; padding: 15px; margin-bottom: 10px; border-left: 4px solid var(--accent); display: flex; align-items: center; justify-content: space-between; gap: 15px; }
-        .info { flex: 1; }
-        .label { font-size: 0.8em; color: var(--accent); font-weight: bold; text-transform: uppercase; }
-        .lvl { font-size: 1.2em; font-weight: bold; color: #fff; }
-        .timer { font-family: monospace; font-size: 1.4em; color: #00ff00; }
+        /* Group Styles */
+        .group-header { color: var(--accent); font-size: 0.9em; font-weight: bold; margin: 20px 0 10px 5px; text-transform: uppercase; border-bottom: 1px solid #30363d; padding-bottom: 5px; }
         
-        /* Input Footer */
-        #input-zone { position: fixed; bottom: 0; left: 0; width: 100%; background: #1c2128; padding: 20px; box-sizing: border-box; border-top: 1px solid #30363d; box-shadow: 0 -5px 10px rgba(0,0,0,0.5); }
-        textarea { width: 100%; max-width: 700px; margin: 0 auto; display: block; height: 60px; background: #0d1117; border: 1px solid #30363d; color: #fff; border-radius: 5px; padding: 10px; box-sizing: border-box; }
-        .btn-update { width: 100%; max-width: 700px; margin: 10px auto 0 auto; display: block; padding: 10px; background: var(--accent); border: none; color: #000; font-weight: bold; cursor: pointer; border-radius: 5px; }
+        .card { background: var(--card); border-radius: 8px; padding: 15px; margin-bottom: 8px; border-left: 4px solid var(--accent); }
+        .flex-row { display: flex; justify-content: space-between; align-items: center; }
+        .timer { font-family: 'Courier New', monospace; font-size: 1.2em; color: #fff; font-weight: bold; }
+        
+        .progress-container { background: #0d1117; height: 6px; border-radius: 3px; margin-top: 10px; overflow: hidden; }
+        .progress-bar { background: var(--accent); height: 100%; width: 0%; transition: width 1s; }
+        
+        /* Fixed Input Zone */
+        #input-zone { position: fixed; bottom: 0; left: 0; width: 100%; background: #1c2128; padding: 20px; box-sizing: border-box; border-top: 1px solid #30363d; z-index: 100; }
+        textarea { width: 100%; max-width: 700px; margin: 0 auto; display: block; height: 60px; background: #0d1117; border: 1px solid #30363d; color: #fff; border-radius: 5px; padding: 10px; }
+        .btn-update { width: 100%; max-width: 700px; margin: 10px auto 0 auto; display: block; padding: 12px; background: var(--accent); border: none; color: #000; font-weight: bold; cursor: pointer; border-radius: 5px; }
     </style>
 </head>
 <body>
 
 <div id="dashboard">
-    <h2 style="text-align:center; color: var(--accent);">TIẾN ĐỘ NÂNG CẤP</h2>
     <div id="list"></div>
 </div>
 
 <div id="input-zone">
-    <textarea id="jsonInput" placeholder="Dán JSON vào đây..."></textarea>
-    <button class="btn-update" onclick="handleInput()">CẬP NHẬT DỮ LIỆU</button>
+    <textarea id="jsonInput" placeholder="Dán JSON từ game vào đây..."></textarea>
+    <button class="btn-update" onclick="handleInput()">CẬP NHẬT TIẾN ĐỘ</button>
 </div>
 
 <script>
-    let activeItems = [];
-
-    // Map category to readable labels
-    const catMap = { "buildings": "Thợ xây", "buildings2": "Thợ xây BB", "pets": "Nhà linh thú", "units2": "Phòng thí nghiệm" };
+    const groups = {
+        "buildings": { title: "Thợ xây (Làng chính)", items: [] },
+        "buildings2": { title: "Làng thợ xây (Builder Base)", items: [] },
+        "units2": { title: "Phòng nghiên cứu", items: [] },
+        "pets": { title: "Nhà linh thú", items: [] }
+    };
 
     function handleInput() {
         const raw = document.getElementById('jsonInput').value;
@@ -52,57 +53,89 @@
     function processJSON(raw) {
         try {
             const data = JSON.parse(raw);
-            activeItems = [];
-            Object.keys(catMap).forEach(cat => {
+            // Reset items
+            Object.keys(groups).forEach(k => groups[k].items = []);
+
+            Object.keys(groups).forEach(cat => {
                 if (data[cat]) {
                     data[cat].forEach(item => {
                         if (item.timer) {
-                            activeItems.push({ 
-                                type: catMap[cat], 
+                            groups[cat].items.push({ 
                                 lvl: item.lvl, 
                                 timer: item.timer,
-                                total: item.timer // Bạn có thể lưu tổng thời gian nếu JSON cung cấp
+                                total: item.timer * 1.1 // Giả định thanh tiến trình
                             });
                         }
                     });
+                    // Sắp xếp trong nhóm
+                    groups[cat].items.sort((a, b) => a.timer - b.timer);
                 }
             });
-            sortAndRender();
-        } catch(e) { alert("Dữ liệu JSON lỗi!"); }
+            render();
+        } catch(e) { alert("Dữ liệu JSON không hợp lệ!"); }
     }
 
-    function sortAndRender() {
-        activeItems.sort((a, b) => a.timer - b.timer);
+    function render() {
         const listDiv = document.getElementById('list');
         listDiv.innerHTML = '';
-        activeItems.forEach((item, index) => {
-            const div = document.createElement('div');
-            div.className = 'card';
-            div.innerHTML = `
-                <div class="info">
-                    <div class="label">${item.type}</div>
-                    <div class="lvl">Lv. ${item.lvl}</div>
-                </div>
-                <div class="timer" id="timer-${index}">${format(item.timer)}</div>
-            `;
-            listDiv.appendChild(div);
+        
+        Object.keys(groups).forEach(key => {
+            const group = groups[key];
+            if (group.items.length > 0) {
+                // Header nhóm
+                const header = document.createElement('div');
+                header.className = 'group-header';
+                header.innerText = group.title;
+                listDiv.appendChild(header);
+
+                // Các thẻ công trình
+                group.items.forEach((item, index) => {
+                    const id = `${key}-${index}`;
+                    const percent = ((item.total - item.timer) / item.total) * 100;
+                    const div = document.createElement('div');
+                    div.className = 'card';
+                    div.innerHTML = `
+                        <div class="flex-row">
+                            <div>Lv.${item.lvl}</div>
+                            <div class="timer" id="timer-${id}">${format(item.timer)}</div>
+                        </div>
+                        <div class="progress-container">
+                            <div class="progress-bar" id="bar-${id}" style="width:${percent}%"></div>
+                        </div>
+                    `;
+                    listDiv.appendChild(div);
+                });
+            }
         });
     }
 
     function format(s) {
-        const h = Math.floor(s / 3600);
+        const d = Math.floor(s / 86400);
+        const h = Math.floor((s % 86400) / 3600);
         const m = Math.floor((s % 3600) / 60);
         const sec = s % 60;
-        return `${h}h ${m}m ${sec}s`;
+        let res = "";
+        if (d > 0) res += d + "d ";
+        res += `${h}h ${m}m ${sec}s`;
+        return res;
     }
 
+    // Update loop
     setInterval(() => {
-        activeItems.forEach((item, index) => {
-            if (item.timer > 0) {
-                item.timer--;
-                const el = document.getElementById(`timer-${index}`);
-                if (el) el.innerText = format(item.timer);
-            }
+        Object.keys(groups).forEach(key => {
+            groups[key].items.forEach((item, index) => {
+                if (item.timer > 0) {
+                    item.timer--;
+                    const id = `${key}-${index}`;
+                    const el = document.getElementById(`timer-${id}`);
+                    if (el) el.innerText = format(item.timer);
+                    const bar = document.getElementById(`bar-${id}`);
+                    if (bar) {
+                        const percent = ((item.total - item.timer) / item.total) * 100;
+                        bar.style.width = `${percent}%`;
+                    }
+                }
+            });
         });
     }, 1000);
 
