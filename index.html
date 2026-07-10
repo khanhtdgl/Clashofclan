@@ -1,279 +1,240 @@
 <!DOCTYPE html>
-
 <html lang="vi">
-
 <head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>COC Timer</title>
 
-  <meta charset="UTF-8" />
+<style>
+body{
+    margin:0;
+    background:#1f2937;
+    color:white;
+    font-family:Arial;
+}
 
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+.container{
+    max-width:480px;
+    margin:auto;
+    padding:15px;
+}
 
-  <title>COC Upgrade Timer</title>
+.summary,.card{
+    background:#374151;
+    border-radius:12px;
+    padding:12px;
+    margin-bottom:12px;
+}
 
-  <style>
+h2,h3{
+    margin:0 0 10px;
+}
 
-    body {
+.summary-item{
+    display:flex;
+    justify-content:space-between;
+    padding:6px 0;
+    border-bottom:1px solid #4b5563;
+}
 
-      font-family: Arial, sans-serif;
+.summary-item:last-child{
+    border:none;
+}
 
-      background: #20242b;
+.row{
+    display:flex;
+    gap:6px;
+    margin:10px 0;
+}
 
-      color: white;
+.row input{
+    width:55px;
+    padding:8px;
+    text-align:center;
+    font-size:16px;
+    border:none;
+    border-radius:8px;
+}
 
-      max-width: 500px;
+button{
+    padding:8px 12px;
+    border:none;
+    border-radius:8px;
+    cursor:pointer;
+}
 
-      margin: auto;
+.start{
+    background:#22c55e;
+    color:white;
+}
 
-      padding: 16px;
+.reset{
+    background:#ef4444;
+    color:white;
+}
 
-    }
+.time{
+    margin-top:8px;
+    font-size:18px;
+    font-weight:bold;
+    color:#4ade80;
+}
 
-    h1 {
-
-      text-align: center;
-
-      margin-bottom: 20px;
-
-    }
-
-    .card {
-
-      background: #2d333b;
-
-      border-radius: 10px;
-
-      padding: 12px;
-
-      margin: 10px 0;
-
-    }
-
-    .label {
-
-      font-weight: bold;
-
-      margin-bottom: 8px;
-
-    }
-
-    input {
-
-      width: 130px;
-
-      padding: 6px;
-
-      border-radius: 6px;
-
-      border: none;
-
-      margin-right: 6px;
-
-    }
-
-    button {
-
-      padding: 6px 10px;
-
-      border: none;
-
-      border-radius: 6px;
-
-      cursor: pointer;
-
-      margin-right: 4px;
-
-    }
-
-    .start {
-
-      background: #28a745;
-
-      color: white;
-
-    }
-
-    .reset {
-
-      background: #dc3545;
-
-      color: white;
-
-    }
-
-    .time {
-
-      margin-top: 8px;
-
-      font-size: 18px;
-
-      font-weight: bold;
-
-      color: #7CFC00;
-
-    }
-
-  </style>
-
+.done{
+    color:#facc15;
+}
+</style>
 </head>
 
 <body>
 
-  <h1>COC Upgrade Timer</h1>
-
-  <div id="app"></div>
-
-  <script>
-
-    const items = [
-
-      "Thợ 1",
-
-      "Thợ 2",
-
-      "Thợ 3",
-
-      "Thợ 4",
-
-      "Thợ 5",
-
-      "Thợ 6",
-
-      "Nghiên cứu",
-
-      "Linh thú"
-
-    ];
-
-    const app = document.getElementById("app");
-
-    function parseTime(txt) {
-
-      const d = +(txt.match(/(\d+)d/) || [,0])[1];
-
-      const h = +(txt.match(/(\d+)h/) || [,0])[1];
-
-      const m = +(txt.match(/(\d+)m/) || [,0])[1];
-
-      const s = +(txt.match(/(\d+)s/) || [,0])[1];
-
-      return (((d * 24 + h) * 60 + m) * 60 + s) * 1000;
-
-    }
-
-    items.forEach((name, i) => {
-
-      const card = document.createElement("div");
-
-      card.className = "card";
-
-      card.innerHTML = `
-
-        <div class="label">${name}</div>
-
-        <input type="text" placeholder="2d18h6m">
-
-        <button class="start">Bắt đầu</button>
-
-        <button class="reset">Xóa</button>
-
-        <div class="time"></div>
-
-      `;
-
-      app.appendChild(card);
-
-      const input = card.querySelector("input");
-
-      const timeDiv = card.querySelector(".time");
-
-      const startBtn = card.querySelector(".start");
-
-      const resetBtn = card.querySelector(".reset");
-
-      const key = "timer_" + i;
-
-      let interval;
-
-      function update() {
-
-        const end = +localStorage.getItem(key);
-
-        if (!end) return;
-
-        let remain = end - Date.now();
-
-        if (remain <= 0) {
-
-          timeDiv.textContent = "✅ Hoàn thành";
-
-          localStorage.removeItem(key);
-
-          clearInterval(interval);
-
-          return;
-
-        }
-
-        let total = Math.floor(remain / 1000);
-
-        const d = Math.floor(total / 86400);
-
-        total %= 86400;
-
-        const h = Math.floor(total / 3600);
-
-        total %= 3600;
-
-        const m = Math.floor(total / 60);
-
-        const s = total % 60;
-
-        timeDiv.textContent = `${d}d ${h}h ${m}m ${s}s`;
-
-      }
-
-      startBtn.onclick = () => {
-
-        const ms = parseTime(input.value);
-
-        if (!ms) return;
-
-        const end = Date.now() + ms;
-
-        localStorage.setItem(key, end);
-
-        clearInterval(interval);
-
-        update();
-
-        interval = setInterval(update, 1000);
-
-      };
-
-      resetBtn.onclick = () => {
-
-        localStorage.removeItem(key);
-
-        clearInterval(interval);
-
-        timeDiv.textContent = "";
-
-        input.value = "";
-
-      };
-
-      if (localStorage.getItem(key)) {
-
-        update();
-
-        interval = setInterval(update, 1000);
-
-      }
-
-    });
-
-  </script>
+<div class="container">
+
+<div class="summary">
+<h2>📋 Sắp hoàn thành</h2>
+
+<div id="summaryList">
+Chưa có bộ đếm nào.
+</div>
+
+</div>
+
+<div id="cards"></div>
+
+</div>
+
+<script>
+const names=[
+"Thợ 1",
+"Thợ 2",
+"Thợ 3",
+"Thợ 4",
+"Thợ 5",
+"Thợ 6",
+"Nghiên cứu",
+"Linh thú"
+];
+</script>
 
 </body>
+</html>
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>COC Timer</title>
 
+<style>
+body{
+    margin:0;
+    background:#1f2937;
+    color:white;
+    font-family:Arial;
+}
+
+.container{
+    max-width:480px;
+    margin:auto;
+    padding:15px;
+}
+
+.summary,.card{
+    background:#374151;
+    border-radius:12px;
+    padding:12px;
+    margin-bottom:12px;
+}
+
+h2,h3{
+    margin:0 0 10px;
+}
+
+.summary-item{
+    display:flex;
+    justify-content:space-between;
+    padding:6px 0;
+    border-bottom:1px solid #4b5563;
+}
+
+.summary-item:last-child{
+    border:none;
+}
+
+.row{
+    display:flex;
+    gap:6px;
+    margin:10px 0;
+}
+
+.row input{
+    width:55px;
+    padding:8px;
+    text-align:center;
+    font-size:16px;
+    border:none;
+    border-radius:8px;
+}
+
+button{
+    padding:8px 12px;
+    border:none;
+    border-radius:8px;
+    cursor:pointer;
+}
+
+.start{
+    background:#22c55e;
+    color:white;
+}
+
+.reset{
+    background:#ef4444;
+    color:white;
+}
+
+.time{
+    margin-top:8px;
+    font-size:18px;
+    font-weight:bold;
+    color:#4ade80;
+}
+
+.done{
+    color:#facc15;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<div class="summary">
+<h2>📋 Sắp hoàn thành</h2>
+
+<div id="summaryList">
+Chưa có bộ đếm nào.
+</div>
+
+</div>
+
+<div id="cards"></div>
+
+</div>
+
+<script>
+const names=[
+"Thợ 1",
+"Thợ 2",
+"Thợ 3",
+"Thợ 4",
+"Thợ 5",
+"Thợ 6",
+"Nghiên cứu",
+"Linh thú"
+];
+</script>
+
+</body>
 </html>
