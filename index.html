@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CoC Upgrade Tracker</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #1a252f;
+            color: #f5f6fa;
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        h1 { text-align: center; color: #f1c40f; margin-bottom: 30px; }
+        .village-title {
+            color: #3498db;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 5px;
+            margin-top: 30px;
+        }
+        .category {
+            background-color: #2c3e50;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+        }
+        .category h3 { margin-top: 0; color: #e67e22; border-bottom: 1px solid #7f8c8d; padding-bottom: 5px; }
+        .item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #34495e;
+        }
+        .item:last-child { border-bottom: none; }
+        .timer { font-weight: bold; color: #e74c3c; background: #c0392b22; padding: 2px 8px; border-radius: 4px; }
+        .no-upgrade { color: #95a5a6; font-style: italic; }
+        
+        /* CSS cho khu vực dán JSON */
+        .json-box {
+            background-color: #34495e;
+            margin-top: 50px;
+            border: 1px dashed #f1c40f;
+        }
+        textarea {
+            width: 100%;
+            background: #1a252f;
+            color: #2ecc71;
+            border: 1px solid #7f8c8d;
+            border-radius: 4px;
+            padding: 10px;
+            box-sizing: border-box;
+            font-family: monospace;
+            resize: vertical;
+        }
+        .btn-group { margin-top: 10px; display: flex; gap: 10px; }
+        button {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .btn-save { background-color: #2ecc71; color: white; }
+        .btn-clear { background-color: #e74c3c; color: white; }
+    </style>
+</head>
+<body>
+
+    <h1>Clash of Clans Tracker (#PGCGR208R)</h1>
+
+    <!-- LÀNG CHÍNH -->
+    <h2 class="village-title">Làng Chính (Home Village)</h2>
+    <div class="category">
+        <h3>Thợ Xây Đang Làm Việc</h3>
+        <div id="home-builders">Đang tải...</div>
+    </div>
+    <div class="category">
+        <h3>Phòng Thí Nghiệm (Lính & Phép)</h3>
+        <div id="home-lab">Đang tải...</div>
+    </div>
+    <div class="category">
+        <h3>Nhà Linh Thú (Pets)</h3>
+        <div id="home-pets">Đang tải...</div>
+    </div>
+
+    <!-- LÀNG THỢ XÂY -->
+    <h2 class="village-title">Làng Thợ Xây (Builder Base)</h2>
+    <div class="category">
+        <h3>Thợ Xây Đang Làm Việc (Mảnh đất 2)</h3>
+        <div id="builder-builders">Đang tải...</div>
+    </div>
+    <div class="category">
+        <h3>Phòng Nghiên Cứu Thợ Xây</h3>
+        <div id="builder-lab">Đang tải...</div>
+    </div>
+
+    <!-- KHU VỰC DÁN JSON -->
+    <div class="category json-box">
+        <h3>Cập Nhật Dữ Liệu Khẩn Cấp (Paste JSON)</h3>
+        <p style="font-size: 13px; color: #bdc3c7; margin-top: 0;">Dán chuỗi JSON mới vào đây để cập nhật ngay lập tức mà không cần sửa code trên GitHub.</p>
+        <textarea id="json-input" rows="6" placeholder="Bắt đầu bằng { và kết thúc bằng }..."></textarea>
+        <div class="btn-group">
+            <button class="btn-save" onclick="saveNewJson()">Cập nhật dữ liệu</button>
+            <button class="btn-clear" onclick="clearLocalData()">Xóa tạm thời (Dùng lại file gốc)</button>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
