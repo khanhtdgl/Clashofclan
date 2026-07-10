@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>CoC Pro - Stable Version</title>
+    <title>CoC Pro - Telegram Sync</title>
     <style>
         :root { --bg: #0b0e14; --card: #161b22; --accent: #e67e22; --text: #c9d1d9; }
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 10px; font-size: 13px; }
@@ -12,7 +12,7 @@
         .btn-danger { background: #552222; border: 1px solid #8b0000; color: #ff7b72; padding: 4px 8px; border-radius: 4px; font-size: 11px; cursor: pointer; }
         .btn-tg { background: #2AABEE; border: 1px solid #1c88c7; color: #fff; padding: 4px 8px; border-radius: 4px; font-size: 11px; cursor: pointer; margin-right: 5px; font-weight: bold;}
         
-        #error-box { display: none; background: #552222; color: #ff7b72; padding: 10px; margin-bottom: 10px; border-radius: 5px; font-family: monospace; font-size: 11px; border: 1px solid #8b0000; }
+        #error-box { display: none; background: #8b0000; color: white; padding: 10px; border-radius: 5px; margin-bottom: 10px; font-weight: bold; }
         
         .summary-card { background: #1c2128; border-radius: 8px; padding: 10px; margin-bottom: 15px; border: 1px solid #30363d; }
         .summary-row { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid #2d333b; align-items: center; }
@@ -61,26 +61,247 @@
 </div>
 
 <script>
-    // Bắt lỗi toàn cục để không bao giờ bị đen màn hình mà không rõ lý do
-    window.onerror = function(msg, url, lineNo) {
-        const errBox = document.getElementById('error-box');
-        if(errBox) {
-            errBox.style.display = 'block';
-            errBox.innerHTML += `Lỗi Safari: ${msg} (Dòng ${lineNo})<br>`;
-        }
-        return false;
-    };
-
-    let nameMap = {};
-    // Khởi tạo an toàn để tránh sập JSON.parse
-    try {
-        const savedMap = localStorage.getItem('name_mapping');
-        if (savedMap) nameMap = JSON.parse(savedMap);
-    } catch(e) {
-        console.error("Lỗi đọc từ điển tên");
-    }
-
+    let nameMap = JSON.parse(localStorage.getItem('name_mapping') || '{}');
     let appData = null;
     let timerInterval = null;
     const order = ["buildings", "units2", "pets", "buildings2"];
-    const titles = { "buildings": "Làng chính", "units2": "Phòng thí nghiệm", "pets": "Nhà linh thú", "buildings2": "L
+    const titles = { "buildings": "Làng chính", "units2": "Phòng thí nghiệm", "pets": "Nhà linh thú", "buildings2": "Làng thợ xây" };
+
+    function showError(msg) {
+        const box = document.getElementById('error-box');
+        box.style.display = 'block';
+        box.innerText = "❌ " + msg;
+        setTimeout(() => { box.style.display = 'none'; }, 6000);
+    }
+
+    function hideError() {
+        document.getElementById('error-box').style.display = 'none';
+    }
+
+    function resetAll() {
+        if(confirm("Bạn có chắc muốn xóa dữ liệu JSON hiện tại?")) {
+            localStorage.removeItem('coc_data');
+            location.reload();
+        }
+    }
+
+    function configTelegram() {
+        const currentToken = localStorage.getItem('tg_token') || "";
+        const currentChatId = localStorage.getItem('tg_chatid') || "";
+        
+        const token = prompt("1. Nhập Bot Token của bạn:", currentToken);
+        if (token === null) return;
+        
+        const chatId = prompt("2. Nhập Chat ID của bạn:", currentChatId);
+        if (chatId === null) return;
+        
+        localStorage.setItem('tg_token', token.trim());
+        localStorage.setItem('tg_chatid', chatId.trim());
+        alert("Đã lưu cấu hình Telegram! Khi công trình đếm về 0, bạn sẽ nhận được tin nhắn.");
+    }
+
+    function sendTelegramMessage(message) {
+        const token = localStorage.getItem('tg_token');
+        const chatId = localStorage.getItem('tg_chatid');
+        
+        if (token && chatId) {
+            const url = `https://api.telegram.org/bot${token}/sendMessage`;
+            fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    chat_id: chatId,
+                    text: `✅ BÁO CÁO CLASH OF CLANS:\n\n${message}`
+                })
+            }).catch(e => console.log("Lỗi gửi Telegram", e));
+        }
+    }
+
+    function handleInput() {
+        const raw = document.getElementById('jsonInput').value;
+        if (!raw) return;
+        
+        let data;
+        try {
+            data = JSON.parse(raw);
+        } catch(e) { 
+            showError("JSON sai cú pháp! Hãy chắc chắn bạn copy đủ dấu ngoặc { ở đầu và } ở cuối.");
+            return;
+        }
+
+        try {
+            localStorage.setItem('coc_data', raw);
+            processData(data);
+            hideError();
+        } catch(e) {
+            showError("Lỗi hệ thống khi đọc dữ liệu: " + e.message);
+        }
+    }
+
+    function editName(id) {
+        const newName = prompt(`Đặt tên cho mã [${id}]:`, nameMap[id] || "");
+        if (newName !== null && newName.trim() !== "") {
+            nameMap[id] = newName.trim();
+            localStorage.setItem('name_mapping', JSON.stringify(nameMap));
+            render();
+        }
+    }
+
+    function setReminder(name, timerSeconds) {
+        if (timerSeconds <= 0) return;
+        const completionDate = new Date(new Date().getTime() + timerSeconds * 1000);
+        const formatDateICS = (date) => date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+        const dtstart = formatDateICS(completionDate);
+        const dtend = formatDateICS(new Date(completionDate.getTime() + 5 * 60000)); 
+
+        const icsData = `BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//CoC Tracker//VN\nBEGIN:VEVENT\nDTSTART:${dtstart}\nDTEND:${dtend}\nSUMMARY:Xong: ${name}\nDESCRIPTION:Công trình ${name} trong Clash of Clans đã nâng cấp xong!\nBEGIN:VALARM\nTRIGGER:-PT0M\nACTION:DISPLAY\nDESCRIPTION:Nhắc nhở CoC\nEND:VALARM\nEND:VEVENT\nEND:VCALENDAR`;
+
+        const blob = new Blob([icsData], { type: 'text/calendar;charset=utf-8' });
+        const link = document.createElement('a');
+        link.href = window.URL.createObjectURL(blob);
+        link.download = 'coc_reminder.ics';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+
+    function processData(data) {
+        appData = data;
+        render();
+    }
+
+    function render() {
+        if (!appData) return;
+        const listDiv = document.getElementById('list');
+        const sumDiv = document.getElementById('summary-list');
+        listDiv.innerHTML = ''; sumDiv.innerHTML = '';
+        
+        let hasUpgrades = false;
+
+        order.forEach(key => {
+            // Đảm bảo dữ liệu tồn tại và là một mảng trước khi dùng hàm filter
+            if (appData[key] && Array.isArray(appData[key])) {
+                appData[key] = appData[key].filter(i => i.timer > 0).sort((a, b) => a.timer - b.timer);
+                
+                if (appData[key].length > 0) {
+                    hasUpgrades = true;
+                    sumDiv.style.display = 'block';
+                    
+                    sumDiv.innerHTML += `
+                        <div class="summary-row">
+                            <span style="color:#8b949e;">${titles[key]}</span>
+                            <span class="sum-timer" id="sum-t-${key}">${format(appData[key][0].timer)}</span>
+                        </div>`;
+                    
+                    listDiv.innerHTML += `<div style="color:var(--accent); font-size:0.85em; font-weight:bold; margin: 15px 0 5px 5px; text-transform: uppercase;">${titles[key]}</div>`;
+                    
+                    appData[key].forEach((item, index) => {
+                        const id = item.data; 
+                        const displayItemName = nameMap[id] || ('Mã: ' + id);
+                        // Thoát các ký tự đặc biệt cho hàm onclick
+                        const safeItemName = displayItemName.replace(/'/g, "\\'"); 
+                        
+                        item.total = item.total || item.totalTime || item.duration || (item.timer * 1.1);
+                        const percent = Math.min(100, Math.max(0, ((item.total - item.timer) / item.total) * 100));
+                        
+                        const alarmBtn = item.timer < 86400 ? `<button class="btn-alarm" onclick="setReminder('${safeItemName}', ${item.timer})">📅 Lịch</button>` : '';
+
+                        listDiv.innerHTML += `
+                            <div class="card">
+                                <div class="flex-row">
+                                    <div class="b-name">${displayItemName}</div>
+                                    <div>
+                                        ${alarmBtn}
+                                        <button class="btn-edit" onclick="editName('${id}')">Sửa</button>
+                                    </div>
+                                </div>
+                                <div class="b-id">Cấp độ: ${item.lvl || '?'}</div>
+                                <div class="live-timer" id="t-${key}-${index}">${format(item.timer)}</div>
+                                <div class="progress-container"><div class="progress-bar" id="b-${key}-${index}" style="width:${percent}%"></div></div>
+                            </div>`;
+                    });
+                }
+            }
+        });
+
+        if (!hasUpgrades) {
+            sumDiv.style.display = 'none';
+            listDiv.innerHTML = `<div class="empty-state">Hiện tại không có dữ liệu nâng cấp nào đang chạy.</div>`;
+        }
+    }
+
+    if (timerInterval) clearInterval(timerInterval);
+    timerInterval = setInterval(() => {
+        if (!appData) return;
+        let needsRender = false;
+        
+        order.forEach(key => {
+            if(appData[key] && Array.isArray(appData[key]) && appData[key].length > 0) {
+                let minTimer = Infinity;
+                
+                appData[key].forEach((item, index) => {
+                    if (item.timer > 0) {
+                        item.timer--;
+                        
+                        const el = document.getElementById(`t-${key}-${index}`);
+                        if (el) el.innerText = format(item.timer);
+                        
+                        const bar = document.getElementById(`b-${key}-${index}`);
+                        if (bar) {
+                            const percent = Math.min(100, Math.max(0, ((item.total - item.timer) / item.total) * 100));
+                            bar.style.width = `${percent}%`;
+                        }
+                        
+                        if (item.timer < minTimer) minTimer = item.timer;
+                        
+                        // KHI ĐẾM NGƯỢC VỀ 0 GIÂY
+                        if (item.timer === 0) {
+                            const itemName = nameMap[item.data] || ('Mã: ' + item.data);
+                            sendTelegramMessage(`🎯 ${itemName} (Level ${item.lvl || '?'}) đã nâng cấp xong!\nVào game tiếp tục cày cuốc thôi sếp ơi!`);
+                            
+                            // Chỉ kích hoạt web notification nếu hệ điều hành có hỗ trợ
+                            if (window.Notification && Notification.permission === "granted") {
+                                new Notification("Đã nâng cấp xong!", {
+                                    body: `Công trình ${itemName} đã hoàn thành.`,
+                                });
+                            }
+                            needsRender = true; 
+                        }
+                    }
+                });
+                
+                const sumEl = document.getElementById(`sum-t-${key}`);
+                if (sumEl) {
+                    sumEl.innerText = minTimer === Infinity ? "Hoàn tất" : format(minTimer);
+                }
+            }
+        });
+        
+        if (needsRender) render();
+    }, 1000);
+
+    function format(s) {
+        if (s <= 0) return "Hoàn tất";
+        const d = Math.floor(s / 86400);
+        const h = Math.floor((s % 86400) / 3600);
+        const m = Math.floor((s % 3600) / 60);
+        const sec = s % 60;
+        let res = "";
+        if (d > 0) res += d + "d ";
+        res += `${h}h ${m}m ${sec}s`;
+        return res;
+    }
+
+    window.onload = () => {
+        const saved = localStorage.getItem('coc_data');
+        if (saved) {
+            try { 
+                processData(JSON.parse(saved)); 
+                document.getElementById('jsonInput').value = saved; 
+            }
+            catch(e) { console.log("Lỗi đồng bộ bộ nhớ tạm."); }
+        }
+    };
+</script>
+</body>
+</html>
