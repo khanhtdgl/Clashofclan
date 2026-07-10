@@ -2,7 +2,7 @@ name: Check CoC Upgrades
 on:
   push:
     paths:
-      - 'data.json'
+      - 'data.json' # Bot sẽ chạy ngay khi bạn sửa hoặc up đè file data.json
   workflow_dispatch:
 
 jobs:
