@@ -1,10 +1,12 @@
-// =============================
+// =======================
 
-// COC TIMER - PHẦN 1
+// COC TIMER v2.0
 
-// =============================
+// PHẦN 1
 
-const names = [
+// =======================
+
+const BUILDERS = [
 
     "Thợ 1",
 
@@ -24,17 +26,23 @@ const names = [
 
 ];
 
+const STORAGE_KEY = "coc_timer_v2";
+
 const cards = document.getElementById("cards");
 
 const summary = document.getElementById("summaryList");
 
 let timers = [];
 
-// Đọc dữ liệu đã lưu
+// =======================
+
+// LOAD / SAVE
+
+// =======================
 
 function loadData(){
 
-    const data = localStorage.getItem("cocTimers");
+    const data = localStorage.getItem(STORAGE_KEY);
 
     if(data){
 
@@ -42,9 +50,9 @@ function loadData(){
 
     }else{
 
-        timers = names.map(name=>({
+        timers = BUILDERS.map(name=>({
 
-            name:name,
+            name,
 
             end:0
 
@@ -54,13 +62,11 @@ function loadData(){
 
 }
 
-// Lưu dữ liệu
-
 function saveData(){
 
     localStorage.setItem(
 
-        "cocTimers",
+        STORAGE_KEY,
 
         JSON.stringify(timers)
 
@@ -68,13 +74,11 @@ function saveData(){
 
 }
 
-loadData();
-
-// =============================
+// =======================
 
 // TẠO GIAO DIỆN
 
-// =============================
+// =======================
 
 function createCards(){
 
@@ -86,155 +90,123 @@ function createCards(){
 
         card.className="card";
 
-        card.id="card"+index;
+        card.id="card-"+index;
 
         card.innerHTML=`
 
-            <h3>${item.name}</h3>
+<h3>${item.name}</h3>
 
-            <div class="input-row">
+<div class="input-row">
 
-                <div class="input-group">
+<div class="input-group">
 
-                    <label>Ngày</label>
+<label>Ngày</label>
 
-                    <input
+<input id="d-${index}" type="number" min="0" value="0">
 
-                        type="number"
+</div>
 
-                        min="0"
+<div class="input-group">
 
-                        id="d${index}"
+<label>Giờ</label>
 
-                    >
+<input id="h-${index}" type="number" min="0" max="23" value="0">
 
-                </div>
+</div>
 
-                <div class="input-group">
+<div class="input-group">
 
-                    <label>Giờ</label>
+<label>Phút</label>
 
-                    <input
+<input id="m-${index}" type="number" min="0" max="59" value="0">
 
-                        type="number"
+</div>
 
-                        min="0"
+</div>
 
-                        max="23"
+<div class="button-row">
 
-                        id="h${index}"
+<button class="start" id="start-${index}">
 
-                    >
+▶
 
-                </div>
+</button>
 
-                <div class="input-group">
+<button class="reset" id="reset-${index}">
 
-                    <label>Phút</label>
+✖
 
-                    <input
+</button>
 
-                        type="number"
+</div>
 
-                        min="0"
+<div class="time" id="time-${index}"></div>
 
-                        max="59"
+<div class="finish" id="finish-${index}"></div>
 
-                        id="m${index}"
-
-                    >
-
-                </div>
-
-            </div>
-
-            <div class="button-row">
-
-                <button
-
-                    class="start"
-
-                    onclick="startTimer(${index})">
-
-                    ▶
-
-                </button>
-
-                <button
-
-                    class="reset"
-
-                    onclick="resetTimer(${index})">
-
-                    ✖
-
-                </button>
-
-            </div>
-
-            <div
-
-                class="time"
-
-                id="time${index}">
-
-            </div>
-
-            <div
-
-                class="finish"
-
-                id="finish${index}">
-
-            </div>
-
-        `;
+`;
 
         cards.appendChild(card);
 
+        document
+
+            .getElementById("start-"+index)
+
+            .addEventListener("click",()=>{
+
+                startTimer(index);
+
+            });
+
+        document
+
+            .getElementById("reset-"+index)
+
+            .addEventListener("click",()=>{
+
+                resetTimer(index);
+
+            });
+
     });
 
-}
-
-createCards();
-
-// =============================
+}// =======================
 
 // BẮT ĐẦU ĐẾM
 
-// =============================
+// =======================
 
 function startTimer(index){
 
-    const d = parseInt(
+    const d = Number(
 
-        document.getElementById("d"+index).value
-
-    ) || 0;
-
-    const h = parseInt(
-
-        document.getElementById("h"+index).value
+        document.getElementById("d-"+index).value
 
     ) || 0;
 
-    const m = parseInt(
+    const h = Number(
 
-        document.getElementById("m"+index).value
+        document.getElementById("h-"+index).value
+
+    ) || 0;
+
+    const m = Number(
+
+        document.getElementById("m-"+index).value
 
     ) || 0;
 
     const totalMinutes =
 
-        d*1440 +
+        d * 1440 +
 
-        h*60 +
+        h * 60 +
 
         m;
 
-    if(totalMinutes<=0){
+    if(totalMinutes <= 0){
 
-        alert("Nhập thời gian!");
+        alert("Hãy nhập thời gian!");
 
         return;
 
@@ -244,7 +216,7 @@ function startTimer(index){
 
         Date.now() +
 
-        totalMinutes*60000;
+        totalMinutes * 60000;
 
     saveData();
 
@@ -252,75 +224,97 @@ function startTimer(index){
 
 }
 
-// =============================
+// =======================
 
-// XÓA
+// XÓA BỘ ĐẾM
 
-// =============================
+// =======================
 
 function resetTimer(index){
 
-    timers[index].end=0;
+    timers[index].end = 0;
 
     saveData();
 
     update();
 
-}// =============================
+}
 
-// HÀM ĐỊNH DẠNG THỜI GIAN
+// =======================
 
-// =============================
+// ĐỊNH DẠNG THỜI GIAN
+
+// =======================
 
 function formatTime(ms){
 
-    let total=Math.ceil(ms/60000);
+    let total = Math.ceil(ms / 60000);
 
-    let d=Math.floor(total/1440);
+    const day = Math.floor(total / 1440);
 
-    total%=1440;
+    total %= 1440;
 
-    let h=Math.floor(total/60);
+    const hour = Math.floor(total / 60);
 
-    let m=total%60;
+    const minute = total % 60;
 
-    if(d>0){
+    if(day > 0){
 
-        return d+"d "+h+"h";
-
-    }
-
-    if(h>0){
-
-        return h+"h "+m+"m";
+        return `${day}d ${hour}h`;
 
     }
 
-    return m+"m";
+    if(hour > 0){
+
+        return `${hour}h ${minute}m`;
+
+    }
+
+    return `${minute}m`;
 
 }
 
-function finishTime(end){
+// =======================
 
-    const date=new Date(end);
+// GIỜ HOÀN THÀNH
 
-    const day=String(date.getDate()).padStart(2,"0");
+// =======================
 
-    const month=String(date.getMonth()+1).padStart(2,"0");
+function finishTime(time){
 
-    const hour=String(date.getHours()).padStart(2,"0");
+    const d = new Date(time);
 
-    const minute=String(date.getMinutes()).padStart(2,"0");
+    const dd = String(
 
-    return day+"/"+month+" "+hour+":"+minute;
+        d.getDate()
 
-}
+    ).padStart(2,"0");
 
-// =============================
+    const mm = String(
+
+        d.getMonth()+1
+
+    ).padStart(2,"0");
+
+    const hh = String(
+
+        d.getHours()
+
+    ).padStart(2,"0");
+
+    const ii = String(
+
+        d.getMinutes()
+
+    ).padStart(2,"0");
+
+    return `${dd}/${mm} ${hh}:${ii}`;
+
+}// =======================
 
 // CẬP NHẬT GIAO DIỆN
 
-// =============================
+// =======================
 
 function update(){
 
@@ -328,11 +322,11 @@ function update(){
 
     timers.forEach((item,index)=>{
 
-        const card=document.getElementById("card"+index);
+        const card=document.getElementById("card-"+index);
 
-        const time=document.getElementById("time"+index);
+        const time=document.getElementById("time-"+index);
 
-        const finish=document.getElementById("finish"+index);
+        const finish=document.getElementById("finish-"+index);
 
         card.className="card";
 
@@ -372,9 +366,13 @@ function update(){
 
         });
 
-        time.innerHTML="Còn: "+formatTime(remain);
+        time.innerHTML="⏳ Còn: "+formatTime(remain);
 
-        finish.innerHTML="Hoàn thành: "+finishTime(item.end);
+        finish.innerHTML=
+
+            "🕒 Hoàn thành: "+
+
+            finishTime(item.end);
 
         if(remain<3600000){
 
@@ -398,6 +396,12 @@ function update(){
 
     });
 
+// =======================
+
+// TỔNG QUAN
+
+// =======================
+
     active.sort((a,b)=>a.remain-b.remain);
 
     summary.innerHTML="";
@@ -406,40 +410,102 @@ function update(){
 
         summary.innerHTML="Chưa có bộ đếm nào.";
 
-    }else{
-
-        active.forEach((item,pos)=>{
-
-            let medal="";
-
-            if(pos===0) medal="🥇";
-
-            else if(pos===1) medal="🥈";
-
-            else if(pos===2) medal="🥉";
-
-            summary.innerHTML+=`
-
-            <div class="summary-item"
-
-                 onclick="document.getElementById('card${item.index}').scrollIntoView({behavior:'smooth'})">
-
-                <span>${medal} ${item.name}</span>
-
-                <span>${formatTime(item.remain)}</span>
-
-            </div>
-
-            `;
-
-        });
+        return;
 
     }
 
-}
+    active.forEach((item,pos)=>{
+
+        let medal="";
+
+        if(pos===0){
+
+            medal="🥇";
+
+        }else if(pos===1){
+
+            medal="🥈";
+
+        }else if(pos===2){
+
+            medal="🥉";
+
+        }else{
+
+            medal="📌";
+
+        }
+
+        summary.innerHTML+=`
+
+<div class="summary-item"
+
+onclick="document.getElementById('card-${item.index}')
+
+.scrollIntoView({behavior:'smooth'})">
+
+<span>${medal} ${item.name}</span>
+
+<span>${formatTime(item.remain)}</span>
+
+</div>
+
+`;
+
+    });
+
+}// =======================
+
+// KHỞI TẠO ỨNG DỤNG
+
+// =======================
+
+loadData();
+
+createCards();
 
 update();
 
-// Cập nhật mỗi phút
+// =======================
 
-setInterval(update,60000);
+// TỰ CẬP NHẬT
+
+// =======================
+
+// Cập nhật mỗi 30 giây
+
+setInterval(update,30000);
+
+// =======================
+
+// LƯU KHI THOÁT
+
+// =======================
+
+window.addEventListener("beforeunload",()=>{
+
+    saveData();
+
+});
+
+// =======================
+
+// CHO PHÉP NHẤN ENTER
+
+// =======================
+
+document.addEventListener("keydown",(e)=>{
+
+    if(e.key==="Enter"){
+
+        update();
+
+    }
+
+});
+
+// =======================
+
+// KẾT THÚC FILE
+
+// =======================
