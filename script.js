@@ -1,21 +1,60 @@
-// Bộ từ điển mặc định (Bạn có thể sửa trực tiếp trên Web, nó sẽ đè lên cấu hình này)
+// BỘ TỪ ĐIỂN CHUẨN HÓA 100% THEO TIẾNG VIỆT TRONG GAME COC
+// Hỗ trợ cả ID số lẫn Tên gốc tiếng Anh từ file JSON xuất ra
 const DEFAULT_DICTIONARY = {
-    "1000003": "Đại Bác (Cannon)",
+    // --- CÔNG TRÌNH (BUILDINGS) ---
+    "1000002": "Kho chứa Tiên dược",
+    "Elixir Storage": "Kho chứa Tiên dược",
+    "elixir_storage": "Kho chứa Tiên dược",
+    
+    "1000015": "Trại lính Hắc ám",
+    "Dark Barracks": "Trại lính Hắc ám",
+    "dark_barracks": "Trại lính Hắc ám",
+    
+    "1000059": "Chuồng Linh thú",
+    "Pet House": "Chuồng Linh thú",
+    "pet_house": "Chuồng Linh thú",
+
+    "1000003": "Đại Bác",
     "1000013": "Tháp Cung Thủ",
     "1000026": "Tháp Phù Thủy",
-    "1000068": "Vũ Khí Nhà Chính",
-    "4000110": "Học Viên Quản Giáo",
-    "26000002": "Phép Cuồng Nhiệt",
-    "73000007": "Linh Thú Phượng Hoàng",
-    "1000039": "Phòng Thí Nghiệm Ngôi Sao",
-    "1000058": "Chòi Thợ Xây O.T.T.O",
-    "4000042": "Xe Lăn Đại Bác"
+
+    // --- PHÒNG THÍ NGHIỆM (LABORATORY - UNITS & SPELLS) ---
+    "23000097": "Kỵ sĩ rễ cây",
+    "Root Rider": "Kỵ sĩ rễ cây",
+    "root_rider": "Kỵ sĩ rễ cây",
+
+    "26000002": "Thần chú Thịnh nộ",
+    "Rage Spell": "Thần chú Thịnh nộ",
+    "rage_spell": "Thần chú Thịnh nộ",
+
+    "Chiến binh Phóng điện": "Chiến binh Phóng điện",
+    "Electro Titan": "Chiến binh Phóng điện",
+    "Minion": "Minion",
+    "Thần chú hồi sinh": "Thần chú hồi sinh",
+    "Không nhân": "Không nhân",
+    "Yêu tinh": "Yêu tinh",
+    "Thần chú Nhân bản": "Thần chú Nhân bản",
+    "Xe Phá thành": "Xe Phá thành",
+
+    // --- LINH THÚ (PETS) ---
+    "73000003": "Thằn lằn phun độc",
+    "Poison Lizard": "Thằn lằn phun độc",
+    "poison_lizard": "Thằn lằn phun độc",
+
+    "73000007": "Phượng hoàng lửa",
+    "Linh Thú Phượng Hoàng": "Phượng hoàng lửa",
+    "Phoenix": "Phượng hoàng lửa",
+
+    "Cáo linh hồn": "Cáo linh hồn",
+    "Spirit Fox": "Cáo linh hồn",
+    "Sứa dữ tợn": "Sứa dữ tợn",
+    "Angry Jelly": "Sứa dữ tợn"
 };
 
 let customDict = {};
 let timerInterval = null;
 
-// Tải bộ từ điển từ bộ nhớ máy tính người dùng
+// Tải bộ từ điển từ bộ nhớ máy tính người dùng (Ưu tiên tên đã sửa đổi nếu có)
 function loadDictionary() {
     const savedDict = localStorage.getItem('coc_custom_names');
     if (savedDict) {
@@ -25,20 +64,23 @@ function loadDictionary() {
     }
 }
 
-// Hàm kích hoạt khi người dùng bấm nút "Sửa" tên ngay trên giao diện web
+// Tính năng bấm sửa trực tiếp phòng trường hợp có món mới cập nhật
 function renameItem(id) {
-    const currentName = customDict[id] || `Mã ID: ${id}`;
-    const newName = prompt(`Nhập tên tiếng Việt chuẩn trong game cho ID [${id}]:`, currentName);
+    const currentName = customDict[id] || `Mã: ${id}`;
+    const newName = prompt(`Nhập tên tiếng Việt chuẩn trong game cho [${id}]:`, currentName);
     if (newName !== null && newName.trim() !== "") {
         customDict[id] = newName.trim();
         localStorage.setItem('coc_custom_names', JSON.stringify(customDict));
-        // Tải lại bảng điều khiển để áp dụng tên mới lập tức
         renderDashboard();
     }
 }
 
-function getItemName(id) {
-    return customDict[id] || `Vật phẩm chưa đặt tên (ID: ${id})`;
+// Hàm thông minh: Tìm tên theo ID hoặc chuỗi text gốc trong file JSON
+function getItemName(itemData) {
+    if (!itemData) return "Vật phẩm ẩn";
+    // Ép kiểu về chuỗi để kiểm tra dữ liệu dễ hơn
+    const searchKey = String(itemData).trim();
+    return customDict[searchKey] || searchKey;
 }
 
 function calculateTimeLeft(targetTime) {
@@ -52,7 +94,7 @@ function calculateTimeLeft(targetTime) {
     const m = Math.floor((diff % 3600) / 60);
     const s = diff % 60;
 
-    return `${d > 0 ? d + 'd ' : ''}${h > 0 || d > 0 ? h + 'h ' : ''}${m}m ${s}s`;
+    return `${d > 0 ? d + 'ng ' : ''}${h > 0 || d > 0 ? h + 'giờ ' : ''}${m}ph ${s}gi`;
 }
 
 function startClock() {
@@ -77,7 +119,7 @@ function renderCategory(arrayData, timestamp, containerId) {
     const upgrades = arrayData ? arrayData.filter(i => i.timer !== undefined) : [];
 
     if (upgrades.length === 0) {
-        box.innerHTML = "<div class='empty-state'>Tất cả thợ đang rảnh rỗi</div>";
+        box.innerHTML = "<div class='empty-state'>Tất cả đang rảnh rỗi</div>";
         return;
     }
 
@@ -90,7 +132,7 @@ function renderCategory(arrayData, timestamp, containerId) {
             <div class="item-meta">
                 <div class="item-name-box">
                     <span class="item-name">${getItemName(item.data)}</span>
-                    <button class="btn-edit" onclick="renameItem('${item.data}')">✏ Sửa tên</button>
+                    <button class="btn-edit" onclick="renameItem('${item.data}')">✏ Sửa</button>
                 </div>
                 <div><span class="badge-lvl">Cấp ${item.lvl}</span></div>
             </div>
@@ -100,15 +142,12 @@ function renderCategory(arrayData, timestamp, containerId) {
     });
 }
 
-// Hàm vẽ toàn bộ trang Dashboard
 async function renderDashboard() {
     try {
         loadDictionary();
         let rawData = localStorage.getItem('coc_saved_json');
         
-        if (rawData) {
-            document.getElementById('json-textarea').value = rawData;
-        } else {
+        if (!rawData) {
             const res = await fetch('data.json');
             rawData = await res.text();
         }
@@ -118,6 +157,7 @@ async function renderDashboard() {
         
         const baseTime = data.timestamp;
 
+        // Đổ dữ liệu ra các thẻ tương ứng
         renderCategory(data.buildings, baseTime, 'box-home-builders');
         const homeLab = [...(data.units || []), ...(data.spells || []), ...(data.siege_machines || [])];
         renderCategory(homeLab, baseTime, 'box-home-lab');
@@ -129,7 +169,6 @@ async function renderDashboard() {
         startClock();
     } catch (e) {
         console.error(e);
-        alert("Lỗi tải cấu trúc JSON, hãy kiểm tra lại định dạng.");
     }
 }
 
@@ -148,6 +187,7 @@ function updateJsonData() {
 
 function resetToDefault() {
     localStorage.removeItem('coc_saved_json');
+    localStorage.removeItem('coc_custom_names');
     document.getElementById('json-textarea').value = "";
     alert("Đã đặt lại về dữ liệu mặc định!");
     renderDashboard();
