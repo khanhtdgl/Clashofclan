@@ -2,67 +2,139 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>CoC Tracker - Mapping Chính Xác</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CoC Upgrade Dashboard</title>
     <style>
-        /* ... CSS giữ nguyên như cũ cho đẹp ... */
-        body { font-family: sans-serif; background: #121212; color: #fff; padding: 20px; }
-        .card { background: #1e1e1e; padding: 15px; margin: 10px 0; border-radius: 10px; border-left: 5px solid #ffcc00; display: flex; justify-content: space-between; }
-        .unknown-id { color: #ff5555; font-size: 0.8em; }
+        :root {
+            --bg: #0f172a;
+            --card: #1e293b;
+            --primary: #f59e0b;
+            --text: #f8fafc;
+            --secondary: #94a3b8;
+        }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); padding: 20px; margin: 0; }
+        .dashboard { max-width: 800px; margin: auto; }
+        header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        
+        .input-section { background: var(--card); padding: 20px; border-radius: 12px; border: 1px solid #334155; }
+        textarea { width: 100%; height: 100px; background: #0f172a; border: 1px solid #334155; color: white; padding: 10px; border-radius: 8px; box-sizing: border-box; resize: vertical; }
+        
+        .actions { display: flex; gap: 10px; margin-top: 10px; }
+        button { padding: 10px 20px; border-radius: 6px; border: none; cursor: pointer; font-weight: 600; transition: 0.3s; }
+        .btn-update { background: var(--primary); color: #000; }
+        .btn-sort { background: #334155; color: white; }
+
+        .item-card { background: var(--card); padding: 16px; border-radius: 10px; margin-bottom: 12px; display: grid; grid-template-columns: 1fr auto; align-items: center; border-left: 4px solid var(--primary); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+        .item-info { display: flex; flex-direction: column; }
+        .item-name { font-weight: bold; font-size: 1.1em; color: var(--primary); }
+        .item-lvl { font-size: 0.9em; color: var(--secondary); }
+        .item-timer { font-family: monospace; font-size: 1.2em; font-weight: bold; text-align: right; }
     </style>
 </head>
 <body>
-    <div style="max-width: 600px; margin: auto;">
-        <h1>CoC Upgrade Tracker</h1>
-        <textarea id="jsonInput" placeholder="Dán JSON vào đây..."></textarea>
-        <button onclick="handlePaste()" style="padding:10px; width:100%; cursor:pointer;">Cập nhật dữ liệu</button>
-        <div id="list"></div>
+
+<div class="dashboard">
+    <header>
+        <h1>CoC Tracker Pro</h1>
+        <button onclick="clearData()" style="background:none; color:var(--secondary); border: 1px solid #334155;">Reset</button>
+    </header>
+
+    <div class="input-section">
+        <textarea id="jsonInput" placeholder="Dán dữ liệu JSON từ game vào đây..."></textarea>
+        <div class="actions">
+            <button class="btn-update" onclick="handleInput()">Cập nhật Dashboard</button>
+            <button class="btn-sort" onclick="sortItems()">Sắp xếp thời gian ↑</button>
+        </div>
     </div>
 
-    <script>
-        // BẢNG TRA CỨU TÊN (Dựa trên JSON của bạn)
-        // Bạn hãy copy ID trong phần "unknown-id" hiển thị trên web và thêm vào đây
-        const nameMap = {
-            "1000003": "Pháo (Cannon)",
-            "1000013": "Tháp Cung Thủ",
-            "1000026": "Kho Vàng",
-            "1000068": "X-Bow",
-            "73000007": "Diggy (Linh thú)",
-            "4000110": "Lính (Unit 4000110)",
-            "26000002": "Phép thuật (Spell 26000002)"
-        };
+    <div id="list" style="margin-top: 20px;"></div>
+</div>
 
-        function processJSON(raw) {
-            try {
-                const data = JSON.parse(raw);
-                const listDiv = document.getElementById('list');
-                listDiv.innerHTML = '';
-                
-                // Quét qua các mục có timer
-                ['buildings', 'buildings2', 'pets', 'units2', 'spells'].forEach(cat => {
-                    if (data[cat]) {
-                        data[cat].forEach((item, idx) => {
-                            if (item.timer) {
-                                const id = item.data.toString();
-                                const name = nameMap[id] || `<span class="unknown-id">Cần cập nhật ID: ${id}</span>`;
-                                
-                                const div = document.createElement('div');
-                                div.className = 'card';
-                                div.innerHTML = `
-                                    <div><strong>${name}</strong> (Lv.${item.lvl})</div>
-                                    <div class="timer">${Math.floor(item.timer/3600)}h ${Math.floor((item.timer%3600)/60)}m</div>
-                                `;
-                                listDiv.appendChild(div);
-                            }
-                        });
-                    }
-                });
-            } catch(e) { alert("JSON lỗi!"); }
-        }
+<script>
+    // Bảng tra cứu (Tương lai bạn có thể load từ file external)
+    const nameMap = {
+        "1000003": "Pháo", "1000013": "Tháp Cung Thủ", "1000026": "Kho Vàng", 
+        "1000068": "X-Bow", "73000007": "Linh Thú (Diggy)"
+    };
 
-        function handlePaste() {
-            const raw = document.getElementById('jsonInput').value;
-            processJSON(raw);
+    let items = [];
+
+    function handleInput() {
+        const raw = document.getElementById('jsonInput').value;
+        if (!raw) return;
+        localStorage.setItem('coc_data', raw);
+        processJSON(raw);
+    }
+
+    function processJSON(raw) {
+        try {
+            const data = JSON.parse(raw);
+            items = [];
+            ['buildings', 'buildings2', 'pets', 'units2'].forEach(cat => {
+                if (data[cat]) {
+                    data[cat].forEach(item => {
+                        if (item.timer) {
+                            items.push({ id: item.data, name: nameMap[item.data] || `ID:${item.data}`, lvl: item.lvl, timer: item.timer });
+                        }
+                    });
+                }
+            });
+            render();
+        } catch(e) { alert("JSON không hợp lệ!"); }
+    }
+
+    function sortItems() {
+        items.sort((a, b) => a.timer - b.timer);
+        render();
+    }
+
+    function render() {
+        const listDiv = document.getElementById('list');
+        listDiv.innerHTML = '';
+        items.forEach((item, index) => {
+            const div = document.createElement('div');
+            div.className = 'item-card';
+            div.innerHTML = `
+                <div class="item-info">
+                    <span class="item-name">${item.name}</span>
+                    <span class="item-lvl">Cấp độ: ${item.lvl}</span>
+                </div>
+                <div class="item-timer" id="timer-${index}">${format(item.timer)}</div>
+            `;
+            listDiv.appendChild(div);
+        });
+    }
+
+    function format(s) {
+        const h = Math.floor(s / 3600);
+        const m = Math.floor((s % 3600) / 60);
+        const sec = s % 60;
+        return `${h}h ${m}m ${sec}s`;
+    }
+
+    setInterval(() => {
+        items.forEach((item, index) => {
+            if (item.timer > 0) {
+                item.timer--;
+                const el = document.getElementById(`timer-${index}`);
+                if (el) el.innerText = format(item.timer);
+            }
+        });
+    }, 1000);
+
+    // Load data cũ
+    window.onload = () => {
+        const saved = localStorage.getItem('coc_data');
+        if (saved) {
+            document.getElementById('jsonInput').value = saved;
+            processJSON(saved);
         }
-    </script>
+    };
+
+    function clearData() {
+        localStorage.removeItem('coc_data');
+        location.reload();
+    }
+</script>
 </body>
 </html>
