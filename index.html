@@ -17,12 +17,13 @@
         .card { background: var(--card); border-radius: 8px; padding: 10px; margin-bottom: 8px; border-left: 4px solid var(--accent); }
         .flex-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
         .b-name { font-weight: bold; color: #fff; font-size: 1.1em; }
+        .b-id { font-size: 0.75em; color: #8b949e; margin-bottom: 5px; font-family: monospace; }
         .btn-edit { padding: 4px 10px; background: #30363d; border: none; color: #aaa; border-radius: 4px; font-size: 11px; }
         
         .progress-container { background: #0d1117; height: 5px; border-radius: 3px; margin-top: 6px; overflow: hidden; }
         .progress-bar { background: var(--accent); height: 100%; width: 0%; }
         
-        #input-zone { position: sticky; bottom: 0; background: #1c2128; padding: 10px; border-top: 1px solid #30363d; margin-top: 20px; }
+        #input-zone { position: fixed; bottom: 0; left: 0; width: 100%; background: #1c2128; padding: 10px; border-top: 1px solid #30363d; z-index: 100; }
         textarea { width: 100%; height: 50px; background: #0d1117; border: 1px solid #30363d; color: #fff; padding: 8px; border-radius: 5px; box-sizing: border-box; }
         .btn-update { width: 100%; margin-top: 5px; padding: 10px; background: var(--accent); border: none; color: #000; font-weight: bold; border-radius: 5px; }
     </style>
@@ -30,16 +31,17 @@
 <body>
 
 <div class="header-bar">
-    <div style="font-weight:bold; color:var(--accent)">DASHBOARD</div>
-    <button class="btn-danger" onclick="resetAll()">Xóa dữ liệu</button>
+    <div style="font-weight:bold; color:var(--accent)">TIẾN ĐỘ NÂNG CẤP</div>
+    <button class="btn-danger" onclick="resetAll()">Xóa Cache</button>
 </div>
 
 <div id="summary-list" class="summary-card"></div>
 <div id="list"></div>
+<div style="height: 120px;"></div>
 
 <div id="input-zone">
     <textarea id="jsonInput" placeholder="Dán JSON vào đây..."></textarea>
-    <button class="btn-update" onclick="handleInput()">CẬP NHẬT DỮ LIỆU</button>
+    <button class="btn-update" onclick="handleInput()">CẬP NHẬT</button>
 </div>
 
 <script>
@@ -47,10 +49,10 @@
     let appData = null;
     let timerInterval = null;
     const order = ["buildings", "units2", "pets", "buildings2"];
-    const titles = { "buildings": "Làng chính", "units2": "Nghiên cứu", "pets": "Linh thú", "buildings2": "Làng thợ xây" };
+    const titles = { "buildings": "Làng chính", "units2": "Phòng nghiên cứu", "pets": "Nhà linh thú", "buildings2": "Làng thợ xây" };
 
     function resetAll() {
-        if(confirm("Xóa hết dữ liệu và làm mới app?")) {
+        if(confirm("Xóa toàn bộ dữ liệu và cấu hình?")) {
             localStorage.clear();
             location.reload();
         }
@@ -63,11 +65,11 @@
             const data = JSON.parse(raw);
             localStorage.setItem('coc_data', raw);
             processData(data);
-        } catch(e) { alert("JSON Lỗi! Kiểm tra lại dữ liệu."); }
+        } catch(e) { alert("Dữ liệu JSON bị lỗi, hãy kiểm tra lại lúc copy!"); }
     }
 
     function editName(id) {
-        const newName = prompt(`Đặt tên cho: ${id}`, nameMap[id] || "");
+        const newName = prompt(`Đặt tên cho mã [${id}]:`, nameMap[id] || "");
         if (newName !== null) {
             nameMap[id] = newName;
             localStorage.setItem('name_mapping', JSON.stringify(nameMap));
@@ -88,24 +90,27 @@
 
         order.forEach(key => {
             if (appData[key]) {
+                // Chỉ lấy những cái còn timer > 0 và sắp xếp
                 appData[key] = appData[key].filter(i => i.timer > 0).sort((a, b) => a.timer - b.timer);
                 
                 if (appData[key].length > 0) {
                     sumDiv.innerHTML += `<div class="summary-row"><span>${titles[key]}</span><span style="font-family:monospace; font-weight:bold">${format(appData[key][0].timer)}</span></div>`;
                     
-                    listDiv.innerHTML += `<div style="color:var(--accent); font-size:0.8em; font-weight:bold; margin: 10px 0 5px 5px;">${titles[key].toUpperCase()}</div>`;
+                    listDiv.innerHTML += `<div style="color:var(--accent); font-size:0.8em; font-weight:bold; margin: 15px 0 5px 5px;">${titles[key].toUpperCase()}</div>`;
                     
                     appData[key].forEach((item, index) => {
-                        const id = item.id || item.name;
+                        // FIX QUAN TRỌNG: Đọc dữ liệu từ item.data
+                        const id = item.data; 
                         item.total = item.total || item.totalTime || item.duration || (item.timer * 1.1);
                         const percent = Math.min(100, Math.max(0, ((item.total - item.timer) / item.total) * 100));
                         
                         listDiv.innerHTML += `
                             <div class="card">
                                 <div class="flex-row">
-                                    <div class="b-name">${nameMap[id] || id}</div>
+                                    <div class="b-name">${nameMap[id] || ('Chưa có tên')}</div>
                                     <button class="btn-edit" onclick="editName('${id}')">Sửa</button>
                                 </div>
+                                <div class="b-id">Lv.${item.lvl || '?'} | ID: ${id}</div>
                                 <div id="t-${key}-${index}" style="font-family:monospace; font-weight:bold; font-size:1.1em">${format(item.timer)}</div>
                                 <div class="progress-container"><div class="progress-bar" id="b-${key}-${index}" style="width:${percent}%"></div></div>
                             </div>`;
@@ -115,7 +120,7 @@
         });
     }
 
-    // Vòng lặp đếm ngược
+    // Đếm ngược real-time
     if (timerInterval) clearInterval(timerInterval);
     timerInterval = setInterval(() => {
         if (!appData) return;
@@ -130,7 +135,7 @@
                         if (el) el.innerText = format(item.timer);
                         if (bar) bar.style.width = `${Math.min(100, Math.max(0, ((item.total - item.timer) / item.total) * 100))}%`;
                     } else {
-                        needsRender = true;
+                        needsRender = true; // Timer = 0 thì báo cần render lại để xóa nó đi
                     }
                 });
             }
@@ -148,8 +153,11 @@
     window.onload = () => {
         const saved = localStorage.getItem('coc_data');
         if (saved) {
-            try { processData(JSON.parse(saved)); document.getElementById('jsonInput').value = saved; }
-            catch(e) { console.log("Lỗi tải data cũ"); }
+            try { 
+                processData(JSON.parse(saved)); 
+                document.getElementById('jsonInput').value = saved; 
+            }
+            catch(e) { console.log("Cache lỗi"); }
         }
     };
 </script>
