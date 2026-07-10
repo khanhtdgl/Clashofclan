@@ -1,2 +1,1 @@
-# Clash Tracker
-Bước 1.
+# Step2
