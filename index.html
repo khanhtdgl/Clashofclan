@@ -3,29 +3,34 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>CoC Pro Dashboard</title>
+    <title>CoC Real-time Pro Dashboard</title>
     <style>
         :root { --bg: #0b0e14; --card: #161b22; --accent: #e67e22; --text: #c9d1d9; }
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 10px; font-size: 13px; }
         
         .header-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-        .btn-danger { background: #552222; border: 1px solid #8b0000; color: #ff7b72; padding: 4px 8px; border-radius: 4px; font-size: 11px; }
+        .btn-danger { background: #552222; border: 1px solid #8b0000; color: #ff7b72; padding: 4px 8px; border-radius: 4px; font-size: 11px; cursor: pointer; }
         
         .summary-card { background: #1c2128; border-radius: 8px; padding: 10px; margin-bottom: 15px; border: 1px solid #30363d; }
-        .summary-row { display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid #2d333b; }
+        .summary-row { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid #2d333b; align-items: center; }
+        .summary-row:last-child { border-bottom: none; }
         
-        .card { background: var(--card); border-radius: 8px; padding: 10px; margin-bottom: 8px; border-left: 4px solid var(--accent); }
+        .card { background: var(--card); border-radius: 8px; padding: 12px; margin-bottom: 8px; border-left: 4px solid var(--accent); box-shadow: 0 4px 6px rgba(0,0,0,0.2); }
         .flex-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
         .b-name { font-weight: bold; color: #fff; font-size: 1.1em; }
         .b-id { font-size: 0.75em; color: #8b949e; margin-bottom: 5px; font-family: monospace; }
-        .btn-edit { padding: 4px 10px; background: #30363d; border: none; color: #aaa; border-radius: 4px; font-size: 11px; }
+        .btn-edit { padding: 4px 10px; background: #30363d; border: none; color: #aaa; border-radius: 4px; font-size: 11px; cursor: pointer; }
         
+        /* Đồng hồ font Courier New cố định độ rộng để chống giật màn hình khi nhảy giây */
+        .live-timer { font-family: 'Courier New', monospace; font-weight: bold; font-size: 1.15em; color: #fff; }
+        .sum-timer { font-family: 'Courier New', monospace; font-weight: bold; color: #fff; }
+
         .progress-container { background: #0d1117; height: 5px; border-radius: 3px; margin-top: 6px; overflow: hidden; }
-        .progress-bar { background: var(--accent); height: 100%; width: 0%; }
+        .progress-bar { background: var(--accent); height: 100%; width: 0%; transition: width 0.2s linear; }
         
-        #input-zone { position: fixed; bottom: 0; left: 0; width: 100%; background: #1c2128; padding: 10px; border-top: 1px solid #30363d; z-index: 100; }
-        textarea { width: 100%; height: 50px; background: #0d1117; border: 1px solid #30363d; color: #fff; padding: 8px; border-radius: 5px; box-sizing: border-box; }
-        .btn-update { width: 100%; margin-top: 5px; padding: 10px; background: var(--accent); border: none; color: #000; font-weight: bold; border-radius: 5px; }
+        #input-zone { position: fixed; bottom: 0; left: 0; width: 100%; background: #1c2128; padding: 10px; border-top: 1px solid #30363d; z-index: 100; box-sizing: border-box; }
+        textarea { width: 100%; height: 45px; background: #0d1117; border: 1px solid #30363d; color: #fff; padding: 8px; border-radius: 5px; box-sizing: border-box; resize: none; }
+        .btn-update { width: 100%; margin-top: 5px; padding: 10px; background: var(--accent); border: none; color: #000; font-weight: bold; border-radius: 5px; cursor: pointer; }
 
         .empty-state { text-align: center; color: #8b949e; padding: 40px 20px; font-style: italic; background: #161b22; border-radius: 8px; margin-top: 20px; border: 1px dashed #30363d; }
     </style>
@@ -33,17 +38,15 @@
 <body>
 
 <div class="header-bar">
-    <div style="font-weight:bold; color:var(--accent)">TIẾN ĐỘ NÂNG CẤP</div>
+    <div style="font-weight:bold; color:var(--accent); text-transform: uppercase; letter-spacing: 0.5px;">Tổng quan thời gian thực</div>
     <button class="btn-danger" onclick="resetAll()">Xóa Cache</button>
 </div>
 
 <div id="summary-list" class="summary-card" style="display: none;"></div>
 <div id="list"></div>
-<div style="height: 120px;"></div>
-
-<div id="input-zone">
+<div style="height: 130px;"></div> <div id="input-zone">
     <textarea id="jsonInput" placeholder="Dán JSON vào đây..."></textarea>
-    <button class="btn-update" onclick="handleInput()">CẬP NHẬT</button>
+    <button class="btn-update" onclick="handleInput()">CẬP NHẬT DỮ LIỆU</button>
 </div>
 
 <script>
@@ -54,7 +57,7 @@
     const titles = { "buildings": "Làng chính", "units2": "Phòng thí nghiệm", "pets": "Nhà linh thú", "buildings2": "Làng thợ xây" };
 
     function resetAll() {
-        if(confirm("Xóa toàn bộ dữ liệu và cấu hình?")) {
+        if(confirm("Xóa toàn bộ dữ liệu và cấu hình đặt tên?")) {
             localStorage.clear();
             location.reload();
         }
@@ -71,7 +74,7 @@
     }
 
     function editName(id) {
-        const newName = prompt(`Đặt tên cho mã [${id}]:`, nameMap[id] || "");
+        const newName = prompt(`Đặt tên cho mã công trình [${id}]:`, nameMap[id] || "");
         if (newName !== null) {
             nameMap[id] = newName;
             localStorage.setItem('name_mapping', JSON.stringify(nameMap));
@@ -94,14 +97,21 @@
 
         order.forEach(key => {
             if (appData[key]) {
+                // Lọc công trình đang chạy và sắp xếp từ nhanh đến chậm
                 appData[key] = appData[key].filter(i => i.timer > 0).sort((a, b) => a.timer - b.timer);
                 
                 if (appData[key].length > 0) {
                     hasUpgrades = true;
                     sumDiv.style.display = 'block';
-                    sumDiv.innerHTML += `<div class="summary-row"><span>${titles[key]}</span><span style="font-family:monospace; font-weight:bold">${format(appData[key][0].timer)}</span></div>`;
                     
-                    listDiv.innerHTML += `<div style="color:var(--accent); font-size:0.8em; font-weight:bold; margin: 15px 0 5px 5px;">${titles[key].toUpperCase()}</div>`;
+                    // Thêm ID sum-t để cập nhật thời gian chạy từng giây cho phần tổng quan
+                    sumDiv.innerHTML += `
+                        <div class="summary-row">
+                            <span style="color:#8b949e;">${titles[key]}</span>
+                            <span class="sum-timer" id="sum-t-${key}">${format(appData[key][0].timer)}</span>
+                        </div>`;
+                    
+                    listDiv.innerHTML += `<div style="color:var(--accent); font-size:0.85em; font-weight:bold; margin: 15px 0 5px 5px; text-transform: uppercase;">${titles[key]}</div>`;
                     
                     appData[key].forEach((item, index) => {
                         const id = item.data; 
@@ -111,11 +121,11 @@
                         listDiv.innerHTML += `
                             <div class="card">
                                 <div class="flex-row">
-                                    <div class="b-name">${nameMap[id] || ('Chưa có tên')}</div>
+                                    <div class="b-name">${nameMap[id] || ('Mã: ' + id)}</div>
                                     <button class="btn-edit" onclick="editName('${id}')">Sửa</button>
                                 </div>
-                                <div class="b-id">Lv.${item.lvl || '?'} | ID: ${id}</div>
-                                <div id="t-${key}-${index}" style="font-family:monospace; font-weight:bold; font-size:1.1em">${format(item.timer)}</div>
+                                <div class="b-id">Cấp độ: ${item.lvl || '?'}</div>
+                                <div class="live-timer" id="t-${key}-${index}">${format(item.timer)}</div>
                                 <div class="progress-container"><div class="progress-bar" id="b-${key}-${index}" style="width:${percent}%"></div></div>
                             </div>`;
                     });
@@ -123,40 +133,67 @@
             }
         });
 
-        // Nếu không có gì đang nâng cấp, hiện thông báo
         if (!hasUpgrades) {
             sumDiv.style.display = 'none';
-            listDiv.innerHTML = `<div class="empty-state">Không tìm thấy công trình nào đang nâng cấp trong dữ liệu JSON.</div>`;
+            listDiv.innerHTML = `<div class="empty-state">Hiện tại không có dữ liệu nâng cấp nào đang chạy.</div>`;
         }
     }
 
+    // Vòng lặp đếm ngược chính xác từng giây
     if (timerInterval) clearInterval(timerInterval);
     timerInterval = setInterval(() => {
         if (!appData) return;
         let needsRender = false;
+        
         order.forEach(key => {
-            if(appData[key]) {
+            if(appData[key] && appData[key].length > 0) {
+                let minTimer = Infinity;
+                
                 appData[key].forEach((item, index) => {
                     if (item.timer > 0) {
                         item.timer--;
+                        
+                        // Cập nhật thời gian thẻ chi tiết
                         const el = document.getElementById(`t-${key}-${index}`);
-                        const bar = document.getElementById(`b-${key}-${index}`);
                         if (el) el.innerText = format(item.timer);
-                        if (bar) bar.style.width = `${Math.min(100, Math.max(0, ((item.total - item.timer) / item.total) * 100))}%`;
+                        
+                        // Cập nhật thanh tiến trình bar
+                        const bar = document.getElementById(`b-${key}-${index}`);
+                        if (bar) {
+                            const percent = Math.min(100, Math.max(0, ((item.total - item.timer) / item.total) * 100));
+                            bar.style.width = `${percent}%`;
+                        }
+                        
+                        // Tìm công trình xong sớm nhất trong nhóm
+                        if (item.timer < minTimer) minTimer = item.timer;
                     } else {
-                        needsRender = true;
+                        needsRender = true; // Có công trình về 0s -> Cần render lại để ẩn đi
                     }
                 });
+                
+                // Cập nhật thời gian nhảy giây ở bảng TỔNG QUAN phía trên
+                const sumEl = document.getElementById(`sum-t-${key}`);
+                if (sumEl) {
+                    sumEl.innerText = minTimer === Infinity ? "Hoàn tất" : format(minTimer);
+                }
             }
         });
+        
         if (needsRender) render();
     }, 1000);
 
+    // Hàm định dạng hiển thị đầy đủ Ngày, Giờ, Phút, Giây
     function format(s) {
+        if (s <= 0) return "Hoàn tất";
         const d = Math.floor(s / 86400);
         const h = Math.floor((s % 86400) / 3600);
         const m = Math.floor((s % 3600) / 60);
-        return (d > 0 ? d + "d " : "") + h + "h " + m + "m";
+        const sec = s % 60;
+        
+        let res = "";
+        if (d > 0) res += d + "d ";
+        res += `${h}h ${m}m ${sec}s`;
+        return res;
     }
 
     window.onload = () => {
@@ -166,7 +203,7 @@
                 processData(JSON.parse(saved)); 
                 document.getElementById('jsonInput').value = saved; 
             }
-            catch(e) { console.log("Cache lỗi"); }
+            catch(e) { console.log("Lỗi đồng bộ bộ nhớ tạm."); }
         }
     };
 </script>
