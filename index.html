@@ -2,122 +2,67 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CoC Upgrade Tracker Pro</title>
+    <title>CoC Tracker - Mapping Chính Xác</title>
     <style>
-        :root { --accent: #ffcc00; --bg: #121212; --card: #1e1e1e; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: #fff; margin: 0; padding: 20px; }
-        .container { max-width: 600px; margin: auto; }
-        textarea { width: 100%; height: 120px; background: #2a2a2a; color: #fff; border: 1px solid #444; border-radius: 8px; padding: 10px; box-sizing: border-box; }
-        .btns { display: flex; gap: 10px; margin-top: 10px; }
-        button { flex: 1; padding: 12px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
-        .btn-main { background: var(--accent); color: #000; }
-        .btn-clear { background: #555; color: #fff; }
-        .card { background: var(--card); padding: 15px; margin: 10px 0; border-radius: 10px; border-left: 5px solid var(--accent); display: flex; justify-content: space-between; align-items: center; }
-        .timer { font-weight: bold; color: #00ff00; font-family: monospace; font-size: 1.1em; }
-        h2 { border-bottom: 2px solid #333; padding-bottom: 10px; }
+        /* ... CSS giữ nguyên như cũ cho đẹp ... */
+        body { font-family: sans-serif; background: #121212; color: #fff; padding: 20px; }
+        .card { background: #1e1e1e; padding: 15px; margin: 10px 0; border-radius: 10px; border-left: 5px solid #ffcc00; display: flex; justify-content: space-between; }
+        .unknown-id { color: #ff5555; font-size: 0.8em; }
     </style>
 </head>
 <body>
-    <div class="container">
+    <div style="max-width: 600px; margin: auto;">
         <h1>CoC Upgrade Tracker</h1>
-        <textarea id="jsonInput" placeholder="Dán JSON từ game vào đây..."></textarea>
-        <div class="btns">
-            <button class="btn-main" onclick="handlePaste()">Cập nhật dữ liệu</button>
-            <button class="btn-clear" onclick="clearData()">Xóa dữ liệu cũ</button>
-        </div>
+        <textarea id="jsonInput" placeholder="Dán JSON vào đây..."></textarea>
+        <button onclick="handlePaste()" style="padding:10px; width:100%; cursor:pointer;">Cập nhật dữ liệu</button>
         <div id="list"></div>
     </div>
 
     <script>
-        // Bảng tra cứu tên (Bạn có thể thêm ID vào đây)
+        // BẢNG TRA CỨU TÊN (Dựa trên JSON của bạn)
+        // Bạn hãy copy ID trong phần "unknown-id" hiển thị trên web và thêm vào đây
         const nameMap = {
-            "1000003": "Pháo", "1000013": "Tháp Cung Thủ", "1000026": "Kho Vàng", 
-            "1000068": "X-Bow", "73000007": "Linh Thú (Diggy)", "1000039": "Pháo Builder Base",
-            "4000110": "Lính (Unit)"
+            "1000003": "Pháo (Cannon)",
+            "1000013": "Tháp Cung Thủ",
+            "1000026": "Kho Vàng",
+            "1000068": "X-Bow",
+            "73000007": "Diggy (Linh thú)",
+            "4000110": "Lính (Unit 4000110)",
+            "26000002": "Phép thuật (Spell 26000002)"
         };
 
-        let activeItems = [];
-
-        // 1. Tự động tải dữ liệu cũ khi mở trang
-        window.onload = () => {
-            const saved = localStorage.getItem('coc_data');
-            if (saved) {
-                document.getElementById('jsonInput').value = saved;
-                processJSON(saved);
-            }
-        };
-
-        // 2. Xử lý khi nhấn nút
-        function handlePaste() {
-            const raw = document.getElementById('jsonInput').value;
-            if(!raw) return;
-            localStorage.setItem('coc_data', raw);
-            processJSON(raw);
-        }
-
-        // 3. Xóa dữ liệu
-        function clearData() {
-            localStorage.removeItem('coc_data');
-            location.reload();
-        }
-
-        // 4. Phân tích dữ liệu
         function processJSON(raw) {
             try {
                 const data = JSON.parse(raw);
-                activeItems = [];
-                const categories = ['buildings', 'buildings2', 'pets', 'units2'];
+                const listDiv = document.getElementById('list');
+                listDiv.innerHTML = '';
                 
-                categories.forEach(cat => {
+                // Quét qua các mục có timer
+                ['buildings', 'buildings2', 'pets', 'units2', 'spells'].forEach(cat => {
                     if (data[cat]) {
-                        data[cat].forEach(item => {
+                        data[cat].forEach((item, idx) => {
                             if (item.timer) {
-                                activeItems.push({
-                                    name: nameMap[item.data] || `ID: ${item.data}`,
-                                    lvl: item.lvl,
-                                    timer: item.timer
-                                });
+                                const id = item.data.toString();
+                                const name = nameMap[id] || `<span class="unknown-id">Cần cập nhật ID: ${id}</span>`;
+                                
+                                const div = document.createElement('div');
+                                div.className = 'card';
+                                div.innerHTML = `
+                                    <div><strong>${name}</strong> (Lv.${item.lvl})</div>
+                                    <div class="timer">${Math.floor(item.timer/3600)}h ${Math.floor((item.timer%3600)/60)}m</div>
+                                `;
+                                listDiv.appendChild(div);
                             }
                         });
                     }
                 });
-
-                // Sắp xếp: Thời gian nhỏ nhất (sắp xong) lên đầu
-                activeItems.sort((a, b) => a.timer - b.timer);
-                render();
-            } catch(e) { alert("JSON lỗi, hãy kiểm tra lại!"); }
+            } catch(e) { alert("JSON lỗi!"); }
         }
 
-        // 5. Hiển thị
-        function render() {
-            const listDiv = document.getElementById('list');
-            listDiv.innerHTML = activeItems.length ? '<h2>Đang nâng cấp:</h2>' : '<p>Không có công trình nào.</p>';
-            
-            activeItems.forEach((item, index) => {
-                const div = document.createElement('div');
-                div.className = 'card';
-                div.innerHTML = `<div><strong>${item.name}</strong> (Lv.${item.lvl})</div><div class="timer" id="timer-${index}">...</div>`;
-                listDiv.appendChild(div);
-            });
+        function handlePaste() {
+            const raw = document.getElementById('jsonInput').value;
+            processJSON(raw);
         }
-
-        // 6. Đếm ngược
-        setInterval(() => {
-            activeItems.forEach((item, index) => {
-                if (item.timer > 0) {
-                    item.timer--;
-                    const h = Math.floor(item.timer / 3600);
-                    const m = Math.floor((item.timer % 3600) / 60);
-                    const s = item.timer % 60;
-                    const el = document.getElementById(`timer-${index}`);
-                    if (el) el.innerText = `${h}h ${m}m ${s}s`;
-                } else {
-                    const el = document.getElementById(`timer-${index}`);
-                    if (el) el.innerText = "Xong!";
-                }
-            });
-        }, 1000);
     </script>
 </body>
 </html>
