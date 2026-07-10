@@ -2,91 +2,37 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>CoC Pro - Precision Editor</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CoC Tracker</title>
     <style>
-        :root { --bg: #0b0e14; --card: #161b22; --accent: #e67e22; --text: #c9d1d9; }
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 10px; font-size: 13px; }
-        .group-header { color: var(--accent); font-size: 0.9em; font-weight: bold; margin: 15px 0 5px 5px; display: flex; justify-content: space-between; align-items: center; }
-        .group-deadline { color: #58a6ff; font-weight: normal; font-size: 0.9em; }
-        .card { background: var(--card); border-radius: 8px; padding: 12px; margin-bottom: 8px; border-left: 4px solid var(--accent); }
-        .btn-time-edit { padding: 4px 8px; background: #8b5cf6; border: none; color: white; border-radius: 4px; font-size: 11px; cursor: pointer; }
-        .live-timer { font-family: monospace; font-size: 1.4em; font-weight: bold; }
-        .time-input-modal { position: fixed; top: 20%; left: 10%; width: 80%; background: #21262d; padding: 20px; border-radius: 10px; z-index: 999; border: 1px solid #30363d; }
-        .time-input-modal input { width: 40px; padding: 5px; background: #0d1117; color: white; border: 1px solid #30363d; text-align: center; }
+        body { background: #0b0e14; color: #c9d1d9; font-family: sans-serif; padding: 10px; }
+        .card { background: #161b22; padding: 15px; border-radius: 8px; margin-bottom: 10px; border-left: 4px solid #e67e22; }
+        .group-header { color: #e67e22; font-weight: bold; margin-top: 20px; display: flex; justify-content: space-between; }
+        button { background: #8b5cf6; border: none; color: white; padding: 5px 10px; border-radius: 4px; }
     </style>
 </head>
 <body>
 
-<div id="list"></div>
-
-<div id="modal" class="time-input-modal" style="display:none;">
-    <div style="font-weight:bold; margin-bottom:10px;">Chỉnh thời gian còn lại:</div>
-    <input id="d" type="number" placeholder="d">d 
-    <input id="h" type="number" placeholder="h">h 
-    <input id="m" type="number" placeholder="m">m 
-    <input id="s" type="number" placeholder="s">s
-    <button onclick="saveTime()" style="width:100%; margin-top:15px; padding:10px; background:var(--accent); border:none; border-radius:5px;">LƯU</button>
-</div>
+<div id="app"></div>
 
 <script>
-    let nameMap = JSON.parse(localStorage.getItem('name_mapping') || '{}');
-    let timeOffsets = JSON.parse(localStorage.getItem('time_offsets') || '{}');
-    let appData = null, editingUid = null;
-    const order = ["buildings", "units2", "pets", "buildings2"];
-    const titles = { "buildings": "Làng chính", "units2": "Phòng thí nghiệm", "pets": "Nhà linh thú", "buildings2": "Làng thợ xây" };
-
-    function editTime(uid) {
-        editingUid = uid;
-        document.getElementById('modal').style.display = 'block';
-    }
-
-    function saveTime() {
-        const d = parseInt(document.getElementById('d').value)||0, h = parseInt(document.getElementById('h').value)||0, m = parseInt(document.getElementById('m').value)||0, s = parseInt(document.getElementById('s').value)||0;
-        const totalSeconds = d*86400 + h*3600 + m*60 + s;
-        timeOffsets[editingUid] = totalSeconds - Math.floor((Date.now() - parseInt(localStorage.getItem('sync_time'))) / 1000);
-        localStorage.setItem('time_offsets', JSON.stringify(timeOffsets));
-        document.getElementById('modal').style.display = 'none';
-        render();
-    }
-
-    function getRemaining(item) {
-        return Math.max(0, Math.floor(((parseInt(localStorage.getItem('sync_time')) + item.timer * 1000) + (timeOffsets[item.uid] || 0) * 1000 - Date.now()) / 1000));
-    }
-
+    // Kiểm tra xem có dữ liệu chưa, nếu chưa thì tạo khung giả để test
+    let data = JSON.parse(localStorage.getItem('coc_data') || '{"buildings":[]}');
+    
     function render() {
-        if (!appData) return;
-        const listDiv = document.getElementById('list');
-        listDiv.innerHTML = '';
-        order.forEach(key => {
-            const items = appData[key]?.filter(i => getRemaining(i) > 0) || [];
-            if (items.length > 0) {
-                const earliest = new Date(Date.now() + getRemaining(items[0]) * 1000);
-                listDiv.innerHTML += `<div class="group-header"><span>${titles[key]}</span><span class="group-deadline">Xong lúc: ${earliest.getHours()}:${String(earliest.getMinutes()).padStart(2,'0')}</span></div>`;
-                items.forEach(item => {
-                    listDiv.innerHTML += `
-                        <div class="card">
-                            <div style="display:flex; justify-content:space-between;">
-                                <b>${nameMap[item.data] || 'Mã: ' + item.data}</b>
-                                ${key === 'units2' ? `<button class="btn-time-edit" onclick="editTime('${item.uid}')">Sửa</button>` : ''}
-                            </div>
-                            <div class="live-timer">${format(getRemaining(item))}</div>
-                        </div>`;
+        let html = '';
+        ["buildings", "units2", "pets", "buildings2"].forEach(key => {
+            if (data[key] && data[key].length > 0) {
+                html += `<div class="group-header"><span>${key}</span><span>Xong: 15:30</span></div>`;
+                data[key].forEach(item => {
+                    html += `<div class="card">${item.timer} giây <button onclick="alert('Đã xóa')">Sửa</button></div>`;
                 });
             }
         });
+        document.getElementById('app').innerHTML = html || 'Chưa có dữ liệu, hãy dán JSON vào.';
     }
-
-    function format(s) {
-        const d = Math.floor(s/86400), h = Math.floor((s%86400)/3600), m = Math.floor((s%3600)/60), sec = s%60;
-        return `${d>0?d+'d ':''}${h}h ${m}m ${sec}s`;
-    }
-
-    setInterval(render, 1000);
-    // Lưu lại lúc nhận data
-    if(!localStorage.getItem('sync_time')) localStorage.setItem('sync_time', Date.now());
     
-    // ... [Phần xử lý JSON giữ nguyên như trước]
+    render();
 </script>
 </body>
 </html>
