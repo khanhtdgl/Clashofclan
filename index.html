@@ -3,46 +3,56 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>CoC Mobile Dash</title>
+    <title>CoC Mobile Dash Pro</title>
     <style>
         :root { --bg: #0b0e14; --card: #161b22; --accent: #e67e22; --text: #c9d1d9; }
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 10px; font-size: 14px; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 10px; font-size: 13px; }
         #dashboard { max-width: 100%; margin-bottom: 120px; }
         
+        /* Summary Section */
+        .summary-card { background: #1c2128; border-radius: 8px; padding: 10px; margin-bottom: 20px; border: 1px solid #30363d; }
+        .summary-row { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid #2d333b; }
+        .summary-row:last-child { border: none; }
+        .summary-label { color: #8b949e; }
+        .summary-time { font-family: monospace; color: #fff; font-weight: bold; }
+
         .group-header { display: flex; justify-content: space-between; align-items: center; color: var(--accent); font-size: 0.85em; font-weight: bold; margin: 15px 5px 8px 5px; text-transform: uppercase; border-bottom: 1px solid #30363d; padding-bottom: 5px; }
         .group-timer { color: #fff; font-family: monospace; }
         
-        .card { background: var(--card); border-radius: 8px; padding: 12px; margin-bottom: 8px; border-left: 4px solid var(--accent); }
+        .card { background: var(--card); border-radius: 8px; padding: 10px; margin-bottom: 6px; border-left: 4px solid var(--accent); }
         .flex-row { display: flex; justify-content: space-between; align-items: center; }
-        .timer { font-family: 'Courier New', monospace; font-size: 1.1em; color: #fff; font-weight: bold; }
+        .timer { font-family: 'Courier New', monospace; font-size: 1em; color: #fff; font-weight: bold; }
         
-        .progress-container { background: #0d1117; height: 6px; border-radius: 3px; margin-top: 8px; overflow: hidden; }
+        .progress-container { background: #0d1117; height: 5px; border-radius: 3px; margin-top: 6px; overflow: hidden; }
         .progress-bar { background: var(--accent); height: 100%; width: 0%; transition: width 0.5s; }
         
-        #input-zone { position: fixed; bottom: 0; left: 0; width: 100%; background: #1c2128; padding: 15px; box-sizing: border-box; border-top: 1px solid #30363d; z-index: 100; }
-        textarea { width: 100%; height: 50px; background: #0d1117; border: 1px solid #30363d; color: #fff; border-radius: 5px; padding: 8px; box-sizing: border-box; font-size: 14px; }
-        .btn-update { width: 100%; margin-top: 10px; padding: 10px; background: var(--accent); border: none; color: #000; font-weight: bold; border-radius: 5px; }
+        #input-zone { position: fixed; bottom: 0; left: 0; width: 100%; background: #1c2128; padding: 12px; box-sizing: border-box; border-top: 1px solid #30363d; z-index: 100; }
+        textarea { width: 100%; height: 45px; background: #0d1117; border: 1px solid #30363d; color: #fff; border-radius: 5px; padding: 8px; box-sizing: border-box; font-size: 13px; }
+        .btn-update { width: 100%; margin-top: 8px; padding: 8px; background: var(--accent); border: none; color: #000; font-weight: bold; border-radius: 5px; }
     </style>
 </head>
 <body>
 
 <div id="dashboard">
+    <div class="group-header">TỔNG QUAN TIẾN ĐỘ</div>
+    <div class="summary-card" id="summary-list">
+        </div>
+
     <div id="list"></div>
 </div>
 
 <div id="input-zone">
-    <textarea id="jsonInput" placeholder="Dán JSON tại đây..."></textarea>
+    <textarea id="jsonInput" placeholder="Dán JSON vào đây..."></textarea>
     <button class="btn-update" onclick="handleInput()">CẬP NHẬT</button>
 </div>
 
 <script>
-    // Thứ tự hiển thị (Làng thợ xây ở cuối)
     const order = ["buildings", "units2", "pets", "buildings2"];
     const groupTitles = {
-        "buildings": "Thợ xây (Làng chính)",
-        "buildings2": "Làng thợ xây",
-        "units2": "Phòng nghiên cứu",
-        "pets": "Nhà linh thú"
+        "buildings": "Làng chính",
+        "units2": "Nghiên cứu",
+        "pets": "Linh thú",
+        "buildings2": "Làng thợ xây"
     };
 
     let dataGroups = {};
@@ -76,9 +86,18 @@
 
     function render() {
         const listDiv = document.getElementById('list');
+        const summaryDiv = document.getElementById('summary-list');
         listDiv.innerHTML = '';
+        summaryDiv.innerHTML = '';
         
         order.forEach(key => {
+            // Render Summary
+            const sumRow = document.createElement('div');
+            sumRow.className = 'summary-row';
+            sumRow.innerHTML = `<span class="summary-label">${groupTitles[key]}</span><span class="summary-time" id="sum-${key}">--</span>`;
+            summaryDiv.appendChild(sumRow);
+
+            // Render Groups
             if (dataGroups[key].length > 0) {
                 const header = document.createElement('div');
                 header.className = 'group-header';
@@ -91,7 +110,7 @@
                     div.className = 'card';
                     div.innerHTML = `
                         <div class="flex-row">
-                            <div style="font-size:0.9em; opacity:0.8;">Đang nâng cấp</div>
+                            <div style="font-size:0.85em; opacity:0.8;">Đang nâng cấp</div>
                             <div class="timer" id="timer-${id}">${format(item.timer)}</div>
                         </div>
                         <div class="progress-container"><div class="progress-bar" id="bar-${id}" style="width:0%"></div></div>
@@ -103,6 +122,7 @@
     }
 
     function format(s) {
+        if (s <= 0) return "Xong";
         const d = Math.floor(s / 86400);
         const h = Math.floor((s % 86400) / 3600);
         const m = Math.floor((s % 3600) / 60);
@@ -116,6 +136,8 @@
     setInterval(() => {
         order.forEach(key => {
             let minTime = Infinity;
+            
+            // Cập nhật từng item
             dataGroups[key].forEach((item, index) => {
                 if (item.timer > 0) {
                     item.timer--;
@@ -128,10 +150,13 @@
                 if (item.timer < minTime) minTime = item.timer;
             });
             
+            // Update G-Timer (Header nhóm) & Summary (Header chung)
             const gTimer = document.getElementById(`g-timer-${key}`);
-            if (gTimer) {
-                gTimer.innerText = minTime === Infinity ? "Xong" : format(minTime);
-            }
+            const sumTimer = document.getElementById(`sum-${key}`);
+            const timeStr = minTime === Infinity ? "Xong" : format(minTime);
+            
+            if (gTimer) gTimer.innerText = timeStr;
+            if (sumTimer) sumTimer.innerText = timeStr;
         });
     }, 1000);
 
