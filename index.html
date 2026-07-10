@@ -15,7 +15,7 @@
         .card { background: var(--card); border-radius: 8px; padding: 10px; margin-bottom: 8px; border-left: 4px solid var(--accent); }
         .flex-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
         .b-name { font-weight: bold; color: #fff; font-size: 1.1em; }
-        .btn-edit { padding: 4px 10px; background: #30363d; border: none; color: #aaa; border-radius: 4px; font-size: 11px; }
+        .btn-edit { padding: 4px 10px; background: #30363d; border: none; color: #aaa; border-radius: 4px; font-size: 11px; cursor: pointer; }
         
         .progress-container { background: #0d1117; height: 5px; border-radius: 3px; margin-top: 6px; overflow: hidden; }
         .progress-bar { background: var(--accent); height: 100%; width: 0%; }
@@ -76,13 +76,18 @@
 
         order.forEach(key => {
             if (cachedData[key]) {
-                // Render Summary
-                sumDiv.innerHTML += `<div class="summary-row"><span>${titles[key]}</span><span class="summary-time">${getMinTime(cachedData[key])}</span></div>`;
+                // Chỉ lấy những công trình còn thời gian (timer > 0)
+                const activeItems = cachedData[key].filter(i => i.timer > 0);
                 
-                // Render Cards
-                if (cachedData[key].length > 0) {
+                // Render Summary (chỉ tính những cái đang chạy)
+                if (activeItems.length > 0) {
+                    sumDiv.innerHTML += `<div class="summary-row"><span>${titles[key]}</span><span class="summary-time">${format(Math.min(...activeItems.map(i => i.timer)))}</span></div>`;
+                }
+                
+                // Render Cards (chỉ render nếu có công trình đang chạy)
+                if (activeItems.length > 0) {
                     listDiv.innerHTML += `<div style="color:var(--accent); font-size:0.8em; font-weight:bold; margin: 10px 0 5px 5px;">${titles[key].toUpperCase()}</div>`;
-                    cachedData[key].forEach(item => {
+                    activeItems.forEach(item => {
                         const id = item.id || item.name;
                         const total = item.totalTime || item.duration || (item.timer * 1.1);
                         const percent = Math.min(100, Math.max(0, ((total - item.timer) / total) * 100));
@@ -99,11 +104,6 @@
                 }
             }
         });
-    }
-
-    function getMinTime(arr) {
-        let min = Math.min(...arr.map(i => i.timer));
-        return min > 0 ? format(min) : "Xong";
     }
 
     function format(s) {
