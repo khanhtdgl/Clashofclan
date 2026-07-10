@@ -1,1 +1,25 @@
-<!DOCTYPE html><html lang="vi"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Clash Tracker</title><link rel="stylesheet" href="style.css"></head><body><header><h1>🏰 Clash of Clans Tracker</h1></header><main><div class="card"><h2>📂 Dữ liệu người chơi</h2><input type="file" id="jsonFile" accept=".json"><p id="status">Chưa chọn file.</p></div></main><script src="script.js"></script></body></html>
+
+<!doctype html><html lang="vi"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>COC Timer</title><style>
+body{font-family:Arial;max-width:500px;margin:auto;padding:16px;background:#f3f3f3}
+.row{background:#fff;padding:10px;margin:8px 0;border-radius:8px}
+input{width:120px} button{margin-left:4px}
+.time{font-weight:bold}
+</style><body><h2>COC Timer</h2><div id="app"></div>
+<script>
+const names=[...Array(6)].map((_,i)=>"Thợ "+(i+1)).concat(["Nghiên cứu","Linh thú"]);
+const app=document.getElementById('app');
+function ms(t){let g=x=>+((t.match(new RegExp("(\\d+)"+x))||[,0])[1]);return ((((g('d')*24+g('h'))*60+g('m'))*60+g('s'))*1000}
+names.forEach((n,i)=>{
+ let d=document.createElement('div');d.className='row';
+ d.innerHTML=`<b>${n}</b><br><input placeholder="2d18h"><button>Bắt đầu</button><button>Đặt lại</button><div class=time></div>`;
+ app.appendChild(d);
+ let inp=d.querySelector('input'),out=d.querySelector('.time');
+ let key='t'+i;
+ function start(end){localStorage[key]=end; tick(); clearInterval(d.iv); d.iv=setInterval(tick,1000);}
+ function tick(){let end=+localStorage[key]; if(!end)return; let r=end-Date.now(); if(r<=0){out.textContent="Hoàn thành!";localStorage.removeItem(key);clearInterval(d.iv);return;} let s=Math.floor(r/1000),dd=Math.floor(s/86400);s%=86400;let h=Math.floor(s/3600);s%=3600;let m=Math.floor(s/60);s%=60;out.textContent=`${dd}d ${h}h ${m}m ${s}s`;}
+ d.querySelectorAll('button')[0].onclick=()=>start(Date.now()+ms(inp.value));
+ d.querySelectorAll('button')[1].onclick=()=>{localStorage.removeItem(key);out.textContent='';inp.value='';clearInterval(d.iv);}
+ if(localStorage[key]) start(+localStorage[key]);
+});
+</script></body></html>
