@@ -8,9 +8,12 @@
         body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; }
         #dashboard { max-width: 700px; margin: 0 auto 150px auto; }
         
-        /* Group Styles */
+        /* Thông báo trạng thái */
+        #status-header { background: var(--header); padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid var(--accent); }
+        .next-builder-text { font-size: 1.1em; font-weight: bold; color: var(--accent); }
+        .btn-notify { background: #30363d; border: none; color: #fff; padding: 5px 10px; border-radius: 4px; cursor: pointer; margin-top: 10px; font-size: 0.8em; }
+
         .group-header { color: var(--accent); font-size: 0.9em; font-weight: bold; margin: 20px 0 10px 5px; text-transform: uppercase; border-bottom: 1px solid #30363d; padding-bottom: 5px; }
-        
         .card { background: var(--card); border-radius: 8px; padding: 15px; margin-bottom: 8px; border-left: 4px solid var(--accent); }
         .flex-row { display: flex; justify-content: space-between; align-items: center; }
         .timer { font-family: 'Courier New', monospace; font-size: 1.2em; color: #fff; font-weight: bold; }
@@ -18,7 +21,6 @@
         .progress-container { background: #0d1117; height: 6px; border-radius: 3px; margin-top: 10px; overflow: hidden; }
         .progress-bar { background: var(--accent); height: 100%; width: 0%; transition: width 1s; }
         
-        /* Fixed Input Zone */
         #input-zone { position: fixed; bottom: 0; left: 0; width: 100%; background: #1c2128; padding: 20px; box-sizing: border-box; border-top: 1px solid #30363d; z-index: 100; }
         textarea { width: 100%; max-width: 700px; margin: 0 auto; display: block; height: 60px; background: #0d1117; border: 1px solid #30363d; color: #fff; border-radius: 5px; padding: 10px; }
         .btn-update { width: 100%; max-width: 700px; margin: 10px auto 0 auto; display: block; padding: 12px; background: var(--accent); border: none; color: #000; font-weight: bold; cursor: pointer; border-radius: 5px; }
@@ -27,6 +29,10 @@
 <body>
 
 <div id="dashboard">
+    <div id="status-header">
+        <div id="next-builder-info" class="next-builder-text">Đang tính toán...</div>
+        <button class="btn-notify" onclick="requestNotification()">Bật thông báo đẩy</button>
+    </div>
     <div id="list"></div>
 </div>
 
@@ -43,6 +49,13 @@
         "pets": { title: "Nhà linh thú", items: [] }
     };
 
+    function requestNotification() {
+        if (!("Notification" in window)) { alert("Trình duyệt không hỗ trợ thông báo!"); return; }
+        Notification.requestPermission().then(permission => {
+            if (permission === "granted") alert("Đã bật thông báo thành công!");
+        });
+    }
+
     function handleInput() {
         const raw = document.getElementById('jsonInput').value;
         if (!raw) return;
@@ -53,7 +66,6 @@
     function processJSON(raw) {
         try {
             const data = JSON.parse(raw);
-            // Reset items
             Object.keys(groups).forEach(k => groups[k].items = []);
 
             Object.keys(groups).forEach(cat => {
@@ -63,16 +75,16 @@
                             groups[cat].items.push({ 
                                 lvl: item.lvl, 
                                 timer: item.timer,
-                                total: item.timer * 1.1 // Giả định thanh tiến trình
+                                total: item.timer * 1.1, // Dùng để tính thanh tiến trình
+                                notified: false // Tránh gửi thông báo spam
                             });
                         }
                     });
-                    // Sắp xếp trong nhóm
                     groups[cat].items.sort((a, b) => a.timer - b.timer);
                 }
             });
             render();
-        } catch(e) { alert("Dữ liệu JSON không hợp lệ!"); }
+        } catch(e) { alert("Dữ liệu JSON lỗi!"); }
     }
 
     function render() {
@@ -82,13 +94,11 @@
         Object.keys(groups).forEach(key => {
             const group = groups[key];
             if (group.items.length > 0) {
-                // Header nhóm
                 const header = document.createElement('div');
                 header.className = 'group-header';
                 header.innerText = group.title;
                 listDiv.appendChild(header);
 
-                // Các thẻ công trình
                 group.items.forEach((item, index) => {
                     const id = `${key}-${index}`;
                     const percent = ((item.total - item.timer) / item.total) * 100;
@@ -99,9 +109,7 @@
                             <div>Lv.${item.lvl}</div>
                             <div class="timer" id="timer-${id}">${format(item.timer)}</div>
                         </div>
-                        <div class="progress-container">
-                            <div class="progress-bar" id="bar-${id}" style="width:${percent}%"></div>
-                        </div>
+                        <div class="progress-container"><div class="progress-bar" id="bar-${id}" style="width:${percent}%"></div></div>
                     `;
                     listDiv.appendChild(div);
                 });
@@ -120,23 +128,42 @@
         return res;
     }
 
-    // Update loop
     setInterval(() => {
+        let minTime = Infinity;
+        let found = false;
+
         Object.keys(groups).forEach(key => {
             groups[key].items.forEach((item, index) => {
                 if (item.timer > 0) {
                     item.timer--;
+                    
+                    // Cập nhật giao diện
                     const id = `${key}-${index}`;
                     const el = document.getElementById(`timer-${id}`);
                     if (el) el.innerText = format(item.timer);
                     const bar = document.getElementById(`bar-${id}`);
-                    if (bar) {
-                        const percent = ((item.total - item.timer) / item.total) * 100;
-                        bar.style.width = `${percent}%`;
+                    if (bar) bar.style.width = `${((item.total - item.timer) / item.total) * 100}%`;
+
+                    // Tìm thời gian nhỏ nhất để hiển thị header
+                    if (item.timer < minTime) minTime = item.timer;
+                    found = true;
+                } else if (item.timer === 0 && !item.notified) {
+                    // Trigger thông báo
+                    item.notified = true;
+                    if (Notification.permission === "granted") {
+                        new Notification("CoC Tracker", { body: `Công trình nhóm ${groups[key].title} đã hoàn thành!` });
                     }
                 }
             });
         });
+
+        // Cập nhật Header
+        const headerEl = document.getElementById('next-builder-info');
+        if (found) {
+            headerEl.innerText = `Thợ xây tiếp theo sẽ rảnh sau: ${format(minTime)}`;
+        } else {
+            headerEl.innerText = "Tất cả thợ đang rảnh!";
+        }
     }, 1000);
 
     window.onload = () => {
