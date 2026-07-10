@@ -3,81 +3,146 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>CoC Pro - Minimal</title>
+    <title>CoC Real-time Tracker</title>
     <style>
         :root { --bg: #0b0e14; --card: #161b22; --accent: #e67e22; --text: #c9d1d9; }
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 10px; }
-        .header-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
-        .btn-danger { background: #552222; border: 1px solid #8b0000; color: #ff7b72; padding: 5px 10px; border-radius: 4px; cursor: pointer; }
-        .card { background: var(--card); border-radius: 8px; padding: 12px; margin-bottom: 10px; border-left: 4px solid var(--accent); }
-        .b-name { font-weight: bold; color: #fff; font-size: 1.1em; margin-bottom: 4px; }
-        .live-timer { font-family: monospace; font-size: 1.3em; color: var(--accent); font-weight: bold; }
-        #input-zone { position: fixed; bottom: 0; left: 0; width: 100%; background: #1c2128; padding: 10px; box-sizing: border-box; }
-        textarea { width: 100%; height: 50px; background: #0d1117; border: 1px solid #30363d; color: #fff; padding: 8px; border-radius: 5px; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 10px; font-size: 13px; }
+        
+        .header-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .btn-danger { background: #552222; border: 1px solid #8b0000; color: #ff7b72; padding: 4px 8px; border-radius: 4px; font-size: 11px; cursor: pointer; }
+        
+        .card { background: var(--card); border-radius: 8px; padding: 12px; margin-bottom: 8px; border-left: 4px solid var(--accent); box-shadow: 0 4px 6px rgba(0,0,0,0.2); }
+        .flex-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+        .b-name { font-weight: bold; color: #fff; font-size: 1.1em; }
+        .b-id { font-size: 0.75em; color: #8b949e; margin-bottom: 5px; font-family: monospace; }
+        
+        .btn-edit { padding: 4px 10px; background: #30363d; border: none; color: #aaa; border-radius: 4px; font-size: 11px; cursor: pointer; }
+        
+        .live-timer { font-family: 'Courier New', monospace; font-weight: bold; font-size: 1.15em; color: #fff; }
+        
+        .progress-container { background: #0d1117; height: 5px; border-radius: 3px; margin-top: 6px; overflow: hidden; }
+        .progress-bar { background: var(--accent); height: 100%; width: 0%; transition: width 0.2s linear; }
+        
+        #input-zone { position: fixed; bottom: 0; left: 0; width: 100%; background: #1c2128; padding: 10px; border-top: 1px solid #30363d; z-index: 100; box-sizing: border-box; }
+        textarea { width: 100%; height: 45px; background: #0d1117; border: 1px solid #30363d; color: #fff; padding: 8px; border-radius: 5px; box-sizing: border-box; resize: none; }
         .btn-update { width: 100%; margin-top: 5px; padding: 10px; background: var(--accent); border: none; color: #000; font-weight: bold; border-radius: 5px; cursor: pointer; }
+
+        .empty-state { text-align: center; color: #8b949e; padding: 40px 20px; font-style: italic; background: #161b22; border-radius: 8px; margin-top: 20px; border: 1px dashed #30363d; }
     </style>
 </head>
 <body>
 
 <div class="header-bar">
-    <div style="font-weight:bold; color:var(--accent);">TIẾN ĐỘ CÔNG TRÌNH</div>
-    <button class="btn-danger" onclick="resetAll()">Xóa</button>
+    <div style="font-weight:bold; color:var(--accent); text-transform: uppercase; letter-spacing: 0.5px;">Tiến độ nâng cấp</div>
+    <button class="btn-danger" onclick="resetAll()">Xóa JSON</button>
 </div>
 
 <div id="list"></div>
-<div style="height: 150px;"></div> 
+<div style="height: 130px;"></div> 
 
 <div id="input-zone">
     <textarea id="jsonInput" placeholder="Dán JSON vào đây..."></textarea>
-    <button class="btn-update" onclick="handleInput()">CẬP NHẬT</button>
+    <button class="btn-update" onclick="handleInput()">CẬP NHẬT DỮ LIỆU</button>
 </div>
 
 <script>
     let nameMap = JSON.parse(localStorage.getItem('name_mapping') || '{}');
     let appData = null;
+    let timerInterval = null;
+    const order = ["buildings", "units2", "pets", "buildings2"];
+    const titles = { "buildings": "Làng chính", "units2": "Phòng thí nghiệm", "pets": "Nhà linh thú", "buildings2": "Làng thợ xây" };
 
-    function resetAll() { localStorage.removeItem('coc_data'); location.reload(); }
+    function resetAll() {
+        if(confirm("Xóa dữ liệu JSON hiện tại?")) {
+            localStorage.removeItem('coc_data');
+            localStorage.removeItem('coc_sync_time');
+            location.reload();
+        }
+    }
 
     function handleInput() {
+        const raw = document.getElementById('jsonInput').value;
+        if (!raw) return;
         try {
-            const data = JSON.parse(document.getElementById('jsonInput').value);
-            localStorage.setItem('coc_data', JSON.stringify(data));
+            const data = JSON.parse(raw);
+            localStorage.setItem('coc_data', raw);
             localStorage.setItem('coc_sync_time', Date.now().toString());
             processData(data);
         } catch(e) { alert("JSON lỗi!"); }
     }
 
-    function processData(data) {
-        const syncTime = parseInt(localStorage.getItem('coc_sync_time') || Date.now());
-        appData = data;
-        render(syncTime);
+    function editName(id) {
+        const newName = prompt(`Đặt tên cho [${id}]:`, nameMap[id] || "");
+        if (newName !== null && newName.trim() !== "") {
+            nameMap[id] = newName.trim();
+            localStorage.setItem('name_mapping', JSON.stringify(nameMap));
+            render();
+        }
     }
 
-    function render(syncTime) {
+    function getRemaining(item) {
+        return Math.max(0, Math.floor((item.targetTime - Date.now()) / 1000));
+    }
+
+    function processData(data) {
+        const syncTime = parseInt(localStorage.getItem('coc_sync_time') || Date.now());
+        order.forEach(key => {
+            if (data[key]) {
+                data[key].forEach(item => {
+                    item.uid = key + '-' + Math.random().toString(36).substr(2, 9);
+                    item.targetTime = syncTime + (item.timer * 1000);
+                    item.total = item.total || item.totalTime || item.duration || (item.timer * 1.1);
+                });
+                data[key] = data[key].sort((a, b) => a.targetTime - b.targetTime);
+            }
+        });
+        appData = data;
+        render();
+    }
+
+    function render() {
+        if (!appData) return;
         const listDiv = document.getElementById('list');
         listDiv.innerHTML = '';
-        ["buildings", "units2", "pets", "buildings2"].forEach(key => {
+        order.forEach(key => {
             if (appData[key]) {
-                appData[key].forEach(item => {
-                    const rem = Math.max(0, Math.floor((syncTime + (item.timer * 1000) - Date.now()) / 1000));
-                    if (rem > 0) {
+                const items = appData[key].filter(i => getRemaining(i) > 0);
+                if (items.length > 0) {
+                    listDiv.innerHTML += `<div style="color:var(--accent); font-size:0.8em; font-weight:bold; margin: 10px 0 5px 5px;">${titles[key]}</div>`;
+                    items.forEach(item => {
+                        const rem = getRemaining(item);
+                        const percent = Math.min(100, Math.max(0, ((item.total - rem) / item.total) * 100));
                         listDiv.innerHTML += `
                             <div class="card">
-                                <div class="b-name">${nameMap[item.data] || 'Công trình ' + item.data}</div>
-                                <div class="live-timer" id="t-${item.data}">${format(rem)}</div>
+                                <div class="flex-row">
+                                    <div class="b-name">${nameMap[item.data] || 'Mã: ' + item.data}</div>
+                                    <button class="btn-edit" onclick="editName('${item.data}')">Sửa tên</button>
+                                </div>
+                                <div class="live-timer" id="t-${item.uid}">${format(rem)}</div>
+                                <div class="progress-container"><div class="progress-bar" id="b-${item.uid}" style="width:${percent}%"></div></div>
                             </div>`;
-                    }
-                });
+                    });
+                }
             }
         });
     }
 
+    setInterval(() => {
+        if(!appData) return;
+        appData.buildings?.concat(appData.units2, appData.pets, appData.buildings2).forEach(item => {
+            if(!item) return;
+            const el = document.getElementById(`t-${item.uid}`);
+            const bar = document.getElementById(`b-${item.uid}`);
+            if(el) el.innerText = format(getRemaining(item));
+            if(bar) bar.style.width = Math.min(100, Math.max(0, ((item.total - getRemaining(item)) / item.total) * 100)) + '%';
+        });
+    }, 1000);
+
     function format(s) {
+        if(s <= 0) return "Hoàn tất";
         const d = Math.floor(s/86400), h = Math.floor((s%86400)/3600), m = Math.floor((s%3600)/60), sec = s%60;
         return `${d>0?d+'d ':''}${h}h ${m}m ${sec}s`;
     }
-
-    setInterval(() => { if(appData) render(parseInt(localStorage.getItem('coc_sync_time'))); }, 1000);
 
     window.onload = () => {
         const saved = localStorage.getItem('coc_data');
