@@ -104,27 +104,36 @@
         }
     }
 
-    // TÍNH NĂNG TẠO FILE LỊCH HẸN CHO IPHONE
+    // TÍNH NĂNG TẠO FILE LỊCH HẸN CHO IPHONE (CẬP NHẬT MỚI)
     function setReminder(name, timerSeconds) {
         if (timerSeconds <= 0) return;
         
-        // Thời điểm hoàn thành = Hiện tại + Số giây còn lại
         const completionDate = new Date(new Date().getTime() + timerSeconds * 1000);
-        
-        // Format ngày giờ theo chuẩn iCalendar UTC (YYYYMMDDTHHMMSSZ)
         const formatDateICS = (date) => date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
         const dtstart = formatDateICS(completionDate);
-        const dtend = formatDateICS(new Date(completionDate.getTime() + 5 * 60000)); // Sự kiện kéo dài 5 phút
+        const dtend = formatDateICS(new Date(completionDate.getTime() + 5 * 60000)); 
 
         const icsData = `BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//CoC Tracker//VN\nBEGIN:VEVENT\nDTSTART:${dtstart}\nDTEND:${dtend}\nSUMMARY:Xong: ${name}\nDESCRIPTION:Công trình ${name} trong Clash of Clans đã nâng cấp xong! Vào game cày tiếp thôi sếp ơi.\nBEGIN:VALARM\nTRIGGER:-PT0M\nACTION:DISPLAY\nDESCRIPTION:Nhắc nhở CoC\nEND:VALARM\nEND:VEVENT\nEND:VCALENDAR`;
 
-        const blob = new Blob([icsData], { type: 'text/calendar;charset=utf-8' });
-        const link = document.createElement('a');
-        link.href = window.URL.createObjectURL(blob);
-        link.download = `CoC_${name.replace(/\s+/g, '_')}.ics`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+        // Mã hóa Base64 để chống lỗi đọc file của Safari
+        const base64 = btoa(unescape(encodeURIComponent(icsData)));
+        const url = "data:text/calendar;charset=utf8;base64," + base64;
+
+        // Kiểm tra xem có phải thiết bị iOS (iPhone/iPad) không
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+
+        if (isIOS) {
+            // Ép Safari mở thẳng chế độ "Thêm sự kiện" thay vì Preview
+            window.location.href = url;
+        } else {
+            // Dành cho Android hoặc PC
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `CoC_${name.replace(/\s+/g, '_')}.ics`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
     }
 
     function getRemaining(item) {
@@ -181,7 +190,6 @@
                         const rem = getRemaining(item);
                         const percent = Math.min(100, Math.max(0, ((item.total - rem) / item.total) * 100));
                         
-                        // FIX: Nút Lịch giờ luôn hiển thị cho tất cả công trình đang active
                         const alarmBtn = `<button class="btn-alarm" onclick="setReminder('${safeItemName}', ${rem})">📅 Lịch</button>`;
 
                         listDiv.innerHTML += `
