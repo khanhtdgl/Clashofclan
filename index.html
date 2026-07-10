@@ -2,59 +2,50 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>CoC Pro Dashboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>CoC Mobile Dash</title>
     <style>
-        :root { --bg: #0b0e14; --card: #161b22; --accent: #e67e22; --text: #c9d1d9; --header: #232933; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; }
-        #dashboard { max-width: 700px; margin: 0 auto 150px auto; }
+        :root { --bg: #0b0e14; --card: #161b22; --accent: #e67e22; --text: #c9d1d9; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 10px; font-size: 14px; }
+        #dashboard { max-width: 100%; margin-bottom: 120px; }
         
-        /* Thông báo trạng thái */
-        #status-header { background: var(--header); padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid var(--accent); }
-        .next-builder-text { font-size: 1.1em; font-weight: bold; color: var(--accent); }
-        .btn-notify { background: #30363d; border: none; color: #fff; padding: 5px 10px; border-radius: 4px; cursor: pointer; margin-top: 10px; font-size: 0.8em; }
-
-        .group-header { color: var(--accent); font-size: 0.9em; font-weight: bold; margin: 20px 0 10px 5px; text-transform: uppercase; border-bottom: 1px solid #30363d; padding-bottom: 5px; }
-        .card { background: var(--card); border-radius: 8px; padding: 15px; margin-bottom: 8px; border-left: 4px solid var(--accent); }
+        .group-header { display: flex; justify-content: space-between; align-items: center; color: var(--accent); font-size: 0.85em; font-weight: bold; margin: 15px 5px 8px 5px; text-transform: uppercase; border-bottom: 1px solid #30363d; padding-bottom: 5px; }
+        .group-timer { color: #fff; font-family: monospace; }
+        
+        .card { background: var(--card); border-radius: 8px; padding: 12px; margin-bottom: 8px; border-left: 4px solid var(--accent); }
         .flex-row { display: flex; justify-content: space-between; align-items: center; }
-        .timer { font-family: 'Courier New', monospace; font-size: 1.2em; color: #fff; font-weight: bold; }
+        .timer { font-family: 'Courier New', monospace; font-size: 1.1em; color: #fff; font-weight: bold; }
         
-        .progress-container { background: #0d1117; height: 6px; border-radius: 3px; margin-top: 10px; overflow: hidden; }
-        .progress-bar { background: var(--accent); height: 100%; width: 0%; transition: width 1s; }
+        .progress-container { background: #0d1117; height: 6px; border-radius: 3px; margin-top: 8px; overflow: hidden; }
+        .progress-bar { background: var(--accent); height: 100%; width: 0%; transition: width 0.5s; }
         
-        #input-zone { position: fixed; bottom: 0; left: 0; width: 100%; background: #1c2128; padding: 20px; box-sizing: border-box; border-top: 1px solid #30363d; z-index: 100; }
-        textarea { width: 100%; max-width: 700px; margin: 0 auto; display: block; height: 60px; background: #0d1117; border: 1px solid #30363d; color: #fff; border-radius: 5px; padding: 10px; }
-        .btn-update { width: 100%; max-width: 700px; margin: 10px auto 0 auto; display: block; padding: 12px; background: var(--accent); border: none; color: #000; font-weight: bold; cursor: pointer; border-radius: 5px; }
+        #input-zone { position: fixed; bottom: 0; left: 0; width: 100%; background: #1c2128; padding: 15px; box-sizing: border-box; border-top: 1px solid #30363d; z-index: 100; }
+        textarea { width: 100%; height: 50px; background: #0d1117; border: 1px solid #30363d; color: #fff; border-radius: 5px; padding: 8px; box-sizing: border-box; font-size: 14px; }
+        .btn-update { width: 100%; margin-top: 10px; padding: 10px; background: var(--accent); border: none; color: #000; font-weight: bold; border-radius: 5px; }
     </style>
 </head>
 <body>
 
 <div id="dashboard">
-    <div id="status-header">
-        <div id="next-builder-info" class="next-builder-text">Đang tính toán...</div>
-        <button class="btn-notify" onclick="requestNotification()">Bật thông báo đẩy</button>
-    </div>
     <div id="list"></div>
 </div>
 
 <div id="input-zone">
-    <textarea id="jsonInput" placeholder="Dán JSON từ game vào đây..."></textarea>
-    <button class="btn-update" onclick="handleInput()">CẬP NHẬT TIẾN ĐỘ</button>
+    <textarea id="jsonInput" placeholder="Dán JSON tại đây..."></textarea>
+    <button class="btn-update" onclick="handleInput()">CẬP NHẬT</button>
 </div>
 
 <script>
-    const groups = {
-        "buildings": { title: "Thợ xây (Làng chính)", items: [] },
-        "buildings2": { title: "Làng thợ xây (Builder Base)", items: [] },
-        "units2": { title: "Phòng nghiên cứu", items: [] },
-        "pets": { title: "Nhà linh thú", items: [] }
+    // Thứ tự hiển thị (Làng thợ xây ở cuối)
+    const order = ["buildings", "units2", "pets", "buildings2"];
+    const groupTitles = {
+        "buildings": "Thợ xây (Làng chính)",
+        "buildings2": "Làng thợ xây",
+        "units2": "Phòng nghiên cứu",
+        "pets": "Nhà linh thú"
     };
 
-    function requestNotification() {
-        if (!("Notification" in window)) { alert("Trình duyệt không hỗ trợ thông báo!"); return; }
-        Notification.requestPermission().then(permission => {
-            if (permission === "granted") alert("Đã bật thông báo thành công!");
-        });
-    }
+    let dataGroups = {};
 
     function handleInput() {
         const raw = document.getElementById('jsonInput').value;
@@ -66,50 +57,44 @@
     function processJSON(raw) {
         try {
             const data = JSON.parse(raw);
-            Object.keys(groups).forEach(k => groups[k].items = []);
+            dataGroups = {};
+            order.forEach(k => dataGroups[k] = []);
 
-            Object.keys(groups).forEach(cat => {
+            Object.keys(dataGroups).forEach(cat => {
                 if (data[cat]) {
                     data[cat].forEach(item => {
                         if (item.timer) {
-                            groups[cat].items.push({ 
-                                lvl: item.lvl, 
-                                timer: item.timer,
-                                total: item.timer * 1.1, // Dùng để tính thanh tiến trình
-                                notified: false // Tránh gửi thông báo spam
-                            });
+                            dataGroups[cat].push({ timer: item.timer, total: item.timer * 1.1 });
                         }
                     });
-                    groups[cat].items.sort((a, b) => a.timer - b.timer);
+                    dataGroups[cat].sort((a, b) => a.timer - b.timer);
                 }
             });
             render();
-        } catch(e) { alert("Dữ liệu JSON lỗi!"); }
+        } catch(e) { alert("JSON lỗi!"); }
     }
 
     function render() {
         const listDiv = document.getElementById('list');
         listDiv.innerHTML = '';
         
-        Object.keys(groups).forEach(key => {
-            const group = groups[key];
-            if (group.items.length > 0) {
+        order.forEach(key => {
+            if (dataGroups[key].length > 0) {
                 const header = document.createElement('div');
                 header.className = 'group-header';
-                header.innerText = group.title;
+                header.innerHTML = `<span>${groupTitles[key]}</span><span class="group-timer" id="g-timer-${key}">--</span>`;
                 listDiv.appendChild(header);
 
-                group.items.forEach((item, index) => {
+                dataGroups[key].forEach((item, index) => {
                     const id = `${key}-${index}`;
-                    const percent = ((item.total - item.timer) / item.total) * 100;
                     const div = document.createElement('div');
                     div.className = 'card';
                     div.innerHTML = `
                         <div class="flex-row">
-                            <div>Lv.${item.lvl}</div>
+                            <div style="font-size:0.9em; opacity:0.8;">Đang nâng cấp</div>
                             <div class="timer" id="timer-${id}">${format(item.timer)}</div>
                         </div>
-                        <div class="progress-container"><div class="progress-bar" id="bar-${id}" style="width:${percent}%"></div></div>
+                        <div class="progress-container"><div class="progress-bar" id="bar-${id}" style="width:0%"></div></div>
                     `;
                     listDiv.appendChild(div);
                 });
@@ -129,41 +114,25 @@
     }
 
     setInterval(() => {
-        let minTime = Infinity;
-        let found = false;
-
-        Object.keys(groups).forEach(key => {
-            groups[key].items.forEach((item, index) => {
+        order.forEach(key => {
+            let minTime = Infinity;
+            dataGroups[key].forEach((item, index) => {
                 if (item.timer > 0) {
                     item.timer--;
-                    
-                    // Cập nhật giao diện
                     const id = `${key}-${index}`;
                     const el = document.getElementById(`timer-${id}`);
                     if (el) el.innerText = format(item.timer);
                     const bar = document.getElementById(`bar-${id}`);
                     if (bar) bar.style.width = `${((item.total - item.timer) / item.total) * 100}%`;
-
-                    // Tìm thời gian nhỏ nhất để hiển thị header
-                    if (item.timer < minTime) minTime = item.timer;
-                    found = true;
-                } else if (item.timer === 0 && !item.notified) {
-                    // Trigger thông báo
-                    item.notified = true;
-                    if (Notification.permission === "granted") {
-                        new Notification("CoC Tracker", { body: `Công trình nhóm ${groups[key].title} đã hoàn thành!` });
-                    }
                 }
+                if (item.timer < minTime) minTime = item.timer;
             });
+            
+            const gTimer = document.getElementById(`g-timer-${key}`);
+            if (gTimer) {
+                gTimer.innerText = minTime === Infinity ? "Xong" : format(minTime);
+            }
         });
-
-        // Cập nhật Header
-        const headerEl = document.getElementById('next-builder-info');
-        if (found) {
-            headerEl.innerText = `Thợ xây tiếp theo sẽ rảnh sau: ${format(minTime)}`;
-        } else {
-            headerEl.innerText = "Tất cả thợ đang rảnh!";
-        }
     }, 1000);
 
     window.onload = () => {
