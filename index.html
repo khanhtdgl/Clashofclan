@@ -104,36 +104,51 @@
         }
     }
 
-    // TÍNH NĂNG TẠO FILE LỊCH HẸN CHO IPHONE (CẬP NHẬT MỚI)
+    // FIX: THÊM CÁC TRƯỜNG BẮT BUỘC CỦA APPLE ĐỂ HIỆN NÚT "THÊM"
     function setReminder(name, timerSeconds) {
         if (timerSeconds <= 0) return;
         
-        const completionDate = new Date(new Date().getTime() + timerSeconds * 1000);
+        const now = new Date();
+        const completionDate = new Date(now.getTime() + timerSeconds * 1000);
+        
         const formatDateICS = (date) => date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+        
+        const dtstamp = formatDateICS(now); // Thời gian tạo sự kiện (Bắt buộc)
         const dtstart = formatDateICS(completionDate);
-        const dtend = formatDateICS(new Date(completionDate.getTime() + 5 * 60000)); 
+        const dtend = formatDateICS(new Date(completionDate.getTime() + 5 * 60000));
+        const uid = Math.random().toString(36).substring(2) + "@coctracker.vn"; // ID Độc nhất (Bắt buộc)
 
-        const icsData = `BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//CoC Tracker//VN\nBEGIN:VEVENT\nDTSTART:${dtstart}\nDTEND:${dtend}\nSUMMARY:Xong: ${name}\nDESCRIPTION:Công trình ${name} trong Clash of Clans đã nâng cấp xong! Vào game cày tiếp thôi sếp ơi.\nBEGIN:VALARM\nTRIGGER:-PT0M\nACTION:DISPLAY\nDESCRIPTION:Nhắc nhở CoC\nEND:VALARM\nEND:VEVENT\nEND:VCALENDAR`;
+        // Khung file .ics chuẩn 100% của Apple Calendar
+        const icsData = [
+            "BEGIN:VCALENDAR",
+            "VERSION:2.0",
+            "PRODID:-//CoC Tracker//VN",
+            "CALSCALE:GREGORIAN",
+            "METHOD:PUBLISH",
+            "BEGIN:VEVENT",
+            `UID:${uid}`,
+            `DTSTAMP:${dtstamp}`,
+            `DTSTART:${dtstart}`,
+            `DTEND:${dtend}`,
+            `SUMMARY:Xong: ${name}`,
+            `DESCRIPTION:Công trình ${name} trong Clash of Clans đã nâng cấp xong! Vào game cày tiếp thôi sếp ơi.`,
+            "BEGIN:VALARM",
+            "TRIGGER:-PT0M",
+            "ACTION:DISPLAY",
+            "DESCRIPTION:Nhắc nhở CoC",
+            "END:VALARM",
+            "END:VEVENT",
+            "END:VCALENDAR"
+        ].join("\n");
 
-        // Mã hóa Base64 để chống lỗi đọc file của Safari
-        const base64 = btoa(unescape(encodeURIComponent(icsData)));
-        const url = "data:text/calendar;charset=utf8;base64," + base64;
-
-        // Kiểm tra xem có phải thiết bị iOS (iPhone/iPad) không
-        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-
-        if (isIOS) {
-            // Ép Safari mở thẳng chế độ "Thêm sự kiện" thay vì Preview
-            window.location.href = url;
-        } else {
-            // Dành cho Android hoặc PC
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = `CoC_${name.replace(/\s+/g, '_')}.ics`;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        }
+        // Ép tải bằng Blob
+        const blob = new Blob([icsData], { type: 'text/calendar;charset=utf-8' });
+        const link = document.createElement('a');
+        link.href = window.URL.createObjectURL(blob);
+        link.download = `CoC_${name.replace(/\s+/g, '_')}.ics`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
     }
 
     function getRemaining(item) {
