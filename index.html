@@ -2,149 +2,72 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>CoC Dash - Fix</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CoC Safe Mode</title>
     <style>
-        :root { --bg: #0b0e14; --card: #161b22; --accent: #e67e22; --text: #c9d1d9; }
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 10px; font-size: 13px; }
-        #status-msg { color: #8b949e; text-align: center; margin-top: 50px; }
-        .summary-card { background: #1c2128; border-radius: 8px; padding: 10px; margin-bottom: 20px; border: 1px solid #30363d; }
-        .summary-row { display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid #2d333b; }
-        .card { background: var(--card); border-radius: 8px; padding: 10px; margin-bottom: 8px; border-left: 4px solid var(--accent); }
-        .flex-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
-        .b-name { font-weight: bold; color: #fff; font-size: 1.1em; }
-        .btn-edit { padding: 4px 10px; background: #30363d; border: none; color: #aaa; border-radius: 4px; font-size: 11px; cursor: pointer; }
-        .progress-container { background: #0d1117; height: 5px; border-radius: 3px; margin-top: 6px; overflow: hidden; }
-        .progress-bar { background: var(--accent); height: 100%; width: 0%; }
-        #input-zone { position: fixed; bottom: 0; left: 0; width: 100%; background: #1c2128; padding: 10px; border-top: 1px solid #30363d; z-index: 100; }
-        textarea { width: 100%; height: 40px; background: #0d1117; border: 1px solid #30363d; color: #fff; padding: 8px; border-radius: 5px; box-sizing: border-box; }
-        .btn-update { width: 100%; margin-top: 5px; padding: 8px; background: var(--accent); border: none; color: #000; font-weight: bold; border-radius: 5px; }
+        body { background: #0b0e14; color: #c9d1d9; font-family: sans-serif; padding: 20px; }
+        .btn-reset { background: #8b0000; color: white; padding: 10px; border: none; border-radius: 5px; width: 100%; margin-bottom: 20px; }
+        .error-log { color: #ff7b72; font-family: monospace; font-size: 12px; margin-bottom: 10px; }
+        textarea { width: 100%; height: 100px; background: #0d1117; color: white; border: 1px solid #30363d; padding: 10px; box-sizing: border-box; }
+        .btn-update { background: #e67e22; color: black; font-weight: bold; padding: 10px; width: 100%; border: none; margin-top: 10px; }
+        .item { background: #161b22; padding: 10px; margin-bottom: 5px; border-radius: 5px; }
     </style>
 </head>
 <body>
 
-<div id="dashboard">
-    <div id="status-msg">Đang khởi động...</div>
-    <div id="content-area" style="display:none;">
-        <div style="color:var(--accent); font-weight:bold; margin-bottom:5px">TỔNG QUAN</div>
-        <div class="summary-card" id="summary-list"></div>
-        <div id="list"></div>
-        <div style="height: 120px;"></div>
-    </div>
-</div>
+<button class="btn-reset" onclick="resetApp()">XÓA HẾT DỮ LIỆU & LÀM MỚI</button>
+<div id="debug" class="error-log"></div>
 
-<div id="input-zone">
-    <textarea id="jsonInput" placeholder="Dán JSON vào đây..."></textarea>
-    <button class="btn-update" onclick="handleInput()">CẬP NHẬT DỮ LIỆU</button>
-</div>
+<textarea id="jsonInput" placeholder="Dán JSON vào đây..."></textarea>
+<button class="btn-update" onclick="runApp()">CHẠY APP</button>
+
+<div id="display" style="margin-top: 20px;"></div>
 
 <script>
-    let nameMap = {};
-    let appData = null;
-    let timerInterval = null;
-    const order = ["buildings", "units2", "pets", "buildings2"];
-    const titles = { "buildings": "Làng chính", "units2": "Nghiên cứu", "pets": "Linh thú", "buildings2": "Làng thợ xây" };
+    function log(msg) { document.getElementById('debug').innerText = msg; }
+    
+    function resetApp() {
+        localStorage.clear();
+        location.reload();
+    }
 
-    // Load dữ liệu an toàn
-    try {
-        nameMap = JSON.parse(localStorage.getItem('name_mapping') || '{}');
-    } catch(e) { localStorage.removeItem('name_mapping'); }
-
-    function handleInput() {
-        const raw = document.getElementById('jsonInput').value;
-        if (!raw) return;
+    function runApp() {
         try {
-            JSON.parse(raw); // Kiểm tra JSON hợp lệ
+            const raw = document.getElementById('jsonInput').value;
+            if (!raw) return log("Chưa dán JSON!");
+            
+            const data = JSON.parse(raw);
             localStorage.setItem('coc_data', raw);
-            processJSON(raw);
-        } catch(e) { alert("JSON không hợp lệ! Hãy kiểm tra lại."); }
-    }
-
-    function editName(id) {
-        const newName = prompt(`Đặt tên cho mã: ${id}`, nameMap[id] || "");
-        if (newName !== null) {
-            nameMap[id] = newName;
-            localStorage.setItem('name_mapping', JSON.stringify(nameMap));
-            render();
+            render(data);
+            log("Đã tải dữ liệu thành công!");
+        } catch(e) {
+            log("LỖI JSON: " + e.message);
         }
     }
 
-    function processJSON(raw) {
-        try {
-            appData = JSON.parse(raw);
-            document.getElementById('status-msg').style.display = 'none';
-            document.getElementById('content-area').style.display = 'block';
-            render();
-        } catch(e) { 
-            document.getElementById('status-msg').innerText = "Dữ liệu JSON bị lỗi!";
-        }
-    }
-
-    function render() {
-        if (!appData) return;
-        const listDiv = document.getElementById('list');
-        const sumDiv = document.getElementById('summary-list');
-        listDiv.innerHTML = ''; sumDiv.innerHTML = '';
-
-        let hasActive = false;
-        order.forEach(key => {
-            if (appData[key]) {
-                appData[key] = appData[key].filter(i => i.timer > 0).sort((a, b) => a.timer - b.timer);
-                if (appData[key].length > 0) {
-                    hasActive = true;
-                    sumDiv.innerHTML += `<div class="summary-row"><span>${titles[key]}</span><span style="font-family:monospace; font-weight:bold">${format(appData[key][0].timer)}</span></div>`;
-                    listDiv.innerHTML += `<div style="color:var(--accent); font-size:0.8em; font-weight:bold; margin: 10px 0 5px 5px;">${titles[key].toUpperCase()}</div>`;
-                    appData[key].forEach((item, index) => {
-                        const id = item.id || item.name;
-                        item.total = item.total || item.totalTime || item.duration || (item.timer * 1.1);
-                        const percent = Math.min(100, Math.max(0, ((item.total - item.timer) / item.total) * 100));
-                        listDiv.innerHTML += `
-                            <div class="card">
-                                <div class="flex-row">
-                                    <div class="b-name">${nameMap[id] || id}</div>
-                                    <button class="btn-edit" onclick="editName('${id}')">Sửa</button>
-                                </div>
-                                <div id="t-${key}-${index}" style="font-family:monospace; font-weight:bold">${format(item.timer)}</div>
-                                <div class="progress-container"><div class="progress-bar" id="b-${key}-${index}" style="width:${percent}%"></div></div>
-                            </div>`;
-                    });
-                }
-            }
-        });
-        if (!hasActive) document.getElementById('status-msg').innerText = "Không có công trình nào đang chạy.";
-    }
-
-    // Interval cập nhật
-    setInterval(() => {
-        if (!appData) return;
-        let changed = false;
-        order.forEach(key => {
-            if(appData[key]) {
-                appData[key].forEach((item, index) => {
+    function render(data) {
+        const d = document.getElementById('display');
+        d.innerHTML = '';
+        const keys = ["buildings", "units2", "pets", "buildings2"];
+        
+        keys.forEach(k => {
+            if (data[k]) {
+                d.innerHTML += `<h3>${k}</h3>`;
+                data[k].forEach(item => {
                     if (item.timer > 0) {
-                        item.timer--;
-                        const el = document.getElementById(`t-${key}-${index}`);
-                        const bar = document.getElementById(`b-${key}-${index}`);
-                        if (el) el.innerText = format(item.timer);
-                        if (bar) bar.style.width = `${Math.min(100, Math.max(0, ((item.total - item.timer) / item.total) * 100))}%`;
-                    } else {
-                        changed = true;
+                        d.innerHTML += `<div class="item">${item.id || item.name} - ${item.timer}s</div>`;
                     }
                 });
             }
         });
-        if (changed) render();
-    }, 1000);
+    }
 
+    // Tự động tải nếu đã có dữ liệu
     window.onload = () => {
         const saved = localStorage.getItem('coc_data');
         if (saved) {
-            try {
-                processJSON(saved);
-                document.getElementById('jsonInput').value = saved;
-            } catch(e) { localStorage.removeItem('coc_data'); }
-        } else {
-            document.getElementById('status-msg').innerText = "Chưa có dữ liệu, hãy dán JSON vào bên dưới.";
+            document.getElementById('jsonInput').value = saved;
+            runApp();
         }
     };
 </script>
