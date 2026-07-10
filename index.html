@@ -3,108 +3,236 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CoC Upgrade Tracker</title>
+    <title>CoC Tiến Độ Nâng Cấp</title>
     <style>
+        :root {
+            --bg-main: #0f172a;
+            --bg-card: #1e293b;
+            --border-color: #334155;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --gold: #f59e0b;
+            --elixir: #d946ef;
+            --dark-elixir: #6366f1;
+            --time-color: #ef4444;
+            --success: #10b981;
+        }
+
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #1a252f;
-            color: #f5f6fa;
-            padding: 20px;
-            max-width: 800px;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            padding: 16px;
+            max-width: 900px;
             margin: 0 auto;
+            line-height: 1.5;
         }
-        h1 { text-align: center; color: #f1c40f; margin-bottom: 30px; }
+
+        h1 {
+            text-align: center;
+            color: var(--gold);
+            font-size: 24px;
+            font-weight: 800;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .tag-account {
+            text-align: center;
+            color: var(--text-muted);
+            font-family: monospace;
+            font-size: 14px;
+            margin-bottom: 25px;
+        }
+
+        .village-section {
+            margin-bottom: 35px;
+        }
+
         .village-title {
-            color: #3498db;
-            border-bottom: 3px solid #3498db;
-            padding-bottom: 5px;
-            margin-top: 30px;
-        }
-        .category {
-            background-color: #2c3e50;
-            padding: 15px;
-            border-radius: 8px;
+            font-size: 18px;
+            color: var(--text-main);
+            border-left: 4px solid var(--gold);
+            padding-left: 10px;
             margin-bottom: 15px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+            font-weight: 700;
         }
-        .category h3 { margin-top: 0; color: #e67e22; border-bottom: 1px solid #7f8c8d; padding-bottom: 5px; }
-        .item {
+
+        .village-section:nth-of-type(2) .village-title {
+            border-left-color: var(--dark-elixir);
+        }
+
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 16px;
+        }
+
+        .card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 16px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+
+        .card h3 {
+            margin-top: 0;
+            margin-bottom: 15px;
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .card h3::after {
+            content: '';
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: var(--gold);
+        }
+        .card.lab h3::after { background-color: var(--elixir); }
+        .card.pet h3::after { background-color: var(--dark-elixir); }
+
+        .list-item {
+            background: rgba(15, 23, 42, 0.4);
+            border: 1px solid rgba(255,255,255,0.05);
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .list-item:last-child { margin-bottom: 0; }
+
+        .item-info {
             display: flex;
             justify-content: space-between;
-            padding: 10px 0;
-            border-bottom: 1px solid #34495e;
+            align-items: center;
+            font-size: 14px;
         }
-        .item:last-child { border-bottom: none; }
-        .timer { font-weight: bold; color: #e74c3c; background: #c0392b22; padding: 2px 8px; border-radius: 4px; }
-        .no-upgrade { color: #95a5a6; font-style: italic; }
+
+        .item-name { font-weight: 600; color: #fff; }
+        .item-lvl { color: var(--text-muted); font-size: 12px; margin-left: 5px; }
         
-        /* CSS cho khu vực dán JSON */
-        .json-box {
-            background-color: #34495e;
-            margin-top: 50px;
-            border: 1px dashed #f1c40f;
+        .item-time {
+            font-weight: 700;
+            color: var(--time-color);
+            font-family: monospace;
+            font-size: 14px;
+            background: rgba(239, 68, 68, 0.1);
+            padding: 2px 6px;
+            border-radius: 4px;
         }
+
+        .status-empty {
+            color: var(--text-muted);
+            font-style: italic;
+            font-size: 13px;
+            text-align: center;
+            padding: 15px 0;
+        }
+
+        /* KHU VỰC NHẬP JSON */
+        .json-area {
+            margin-top: 40px;
+            background-color: var(--bg-card);
+            border: 1px dashed var(--border-color);
+            border-radius: 12px;
+            padding: 20px;
+        }
+        .json-area h3 { color: var(--text-main); margin-top: 0; font-size: 16px;}
+        
         textarea {
             width: 100%;
-            background: #1a252f;
-            color: #2ecc71;
-            border: 1px solid #7f8c8d;
-            border-radius: 4px;
-            padding: 10px;
+            background-color: var(--bg-main);
+            color: #34d399;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 12px;
             box-sizing: border-box;
             font-family: monospace;
+            font-size: 12px;
             resize: vertical;
         }
-        .btn-group { margin-top: 10px; display: flex; gap: 10px; }
-        button {
-            padding: 10px 15px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-weight: bold;
+
+        .btn-group {
+            margin-top: 12px;
+            display: flex;
+            gap: 10px;
         }
-        .btn-save { background-color: #2ecc71; color: white; }
-        .btn-clear { background-color: #e74c3c; color: white; }
+
+        button {
+            padding: 10px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 13px;
+            transition: all 0.2s;
+        }
+
+        .btn-primary { background-color: var(--gold); color: #000; }
+        .btn-primary:hover { opacity: 0.9; }
+        .btn-secondary { background-color: transparent; color: var(--text-muted); border: 1px solid var(--border-color); }
+        .btn-secondary:hover { background: rgba(255,255,255,0.05); color: #fff; }
     </style>
 </head>
 <body>
 
-    <h1>Clash of Clans Tracker (#PGCGR208R)</h1>
+    <h1>Tiến Độ Nâng Cấp CoC</h1>
+    <div class="tag-account" id="account-tag">#PLAYER_TAG</div>
 
-    <!-- LÀNG CHÍNH -->
-    <h2 class="village-title">Làng Chính (Home Village)</h2>
-    <div class="category">
-        <h3>Thợ Xây Đang Làm Việc</h3>
-        <div id="home-builders">Đang tải...</div>
-    </div>
-    <div class="category">
-        <h3>Phòng Thí Nghiệm (Lính & Phép)</h3>
-        <div id="home-lab">Đang tải...</div>
-    </div>
-    <div class="category">
-        <h3>Nhà Linh Thú (Pets)</h3>
-        <div id="home-pets">Đang tải...</div>
-    </div>
-
-    <!-- LÀNG THỢ XÂY -->
-    <h2 class="village-title">Làng Thợ Xây (Builder Base)</h2>
-    <div class="category">
-        <h3>Thợ Xây Đang Làm Việc (Mảnh đất 2)</h3>
-        <div id="builder-builders">Đang tải...</div>
-    </div>
-    <div class="category">
-        <h3>Phòng Nghiên Cứu Thợ Xây</h3>
-        <div id="builder-lab">Đang tải...</div>
+    <!-- HẠNG MỤC LÀNG CHÍNH -->
+    <div class="village-section">
+        <div class="village-title">Làng Chính (Home Village)</div>
+        <div class="grid-container">
+            <div class="card">
+                <h3>Thợ Xây Đang Làm</h3>
+                <div id="home-builders"></div>
+            </div>
+            <div class="card lab">
+                <h3>Phòng Thí Nghiệm</h3>
+                <div id="home-lab"></div>
+            </div>
+            <div class="card pet">
+                <h3>Nhà Linh Thú</h3>
+                <div id="home-pets"></div>
+            </div>
+        </div>
     </div>
 
-    <!-- KHU VỰC DÁN JSON -->
-    <div class="category json-box">
-        <h3>Cập Nhật Dữ Liệu Khẩn Cấp (Paste JSON)</h3>
-        <p style="font-size: 13px; color: #bdc3c7; margin-top: 0;">Dán chuỗi JSON mới vào đây để cập nhật ngay lập tức mà không cần sửa code trên GitHub.</p>
-        <textarea id="json-input" rows="6" placeholder="Bắt đầu bằng { và kết thúc bằng }..."></textarea>
+    <!-- HẠNG MỤC LÀNG THỢ XÂY -->
+    <div class="village-section">
+        <div class="village-title">Làng Thợ Xây (Builder Base)</div>
+        <div class="grid-container">
+            <div class="card">
+                <h3>Thợ Xây Đang Làm</h3>
+                <div id="builder-builders"></div>
+            </div>
+            <div class="card lab">
+                <h3>Phòng Thí Nghiệm Sao</h3>
+                <div id="builder-lab"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- KHU VỰC CẬP NHẬT NHANH -->
+    <div class="json-area">
+        <h3>Dán Dữ Liệu JSON Mới</h3>
+        <textarea id="json-input" rows="5" placeholder="Dán chuỗi dữ liệu mã hóa từ file game vào đây..."></textarea>
         <div class="btn-group">
-            <button class="btn-save" onclick="saveNewJson()">Cập nhật dữ liệu</button>
-            <button class="btn-clear" onclick="clearLocalData()">Xóa tạm thời (Dùng lại file gốc)</button>
+            <button class="btn-primary" onclick="saveNewJson()">Cập Nhật Ngay</button>
+            <button class="btn-secondary" onclick="clearLocalData()">Dùng File Gốc GitHub</button>
         </div>
     </div>
 
