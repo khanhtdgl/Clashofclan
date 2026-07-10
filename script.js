@@ -1,19 +1,28 @@
-const ID_DICTIONARY = {
-    "1000003": "Mỏ Vàng / Hút Dầu",
+// Bộ từ điển dịch ID thô sang tên chuẩn 100% trong game Clash of Clans tiếng Việt
+const DICTIONARY = {
+    // Làng chính - Công trình (Buildings)
+    "1000003": "Mỏ Vàng",
+    "1000013": "Tháp Cung Thủ",
     "1000026": "Tháp Phù Thủy",
-    "1000068": "Tháp Giga / Vũ khí chính TH",
-    "4000110": "Nâng cấp Siêu Cấp / Lính phòng thí nghiệm",
-    "26000002": "Phép Cuồng Nhiệt (Rage Spell)",
-    "73000007": "Phượng Hoàng (Phoenix)",
-    "1000039": "Phòng Nghiên Cứu Thợ Xây (Lab BB)",
-    "1000058": "Chòi Thợ Xây Ô Tô (O.T.T.O Hut)",
-    "4000042": "Xe Lăn Ngờ Nghệch (Cannon Cart)"
+    "1000068": "Vũ Khí Nhà Chính (Giga Weapon)",
+    
+    // Làng chính - Nghiên cứu (Units / Spells)
+    "4000110": "Học Viên Quản Giáo",
+    "26000002": "Phép Cuồng Nhiệt",
+    
+    // Làng chính - Linh thú (Pets)
+    "73000007": "Linh Thú Phượng Hoàng",
+
+    // Làng thợ xây - Công trình & Lính (Builder Base)
+    "1000039": "Phòng Thí Nghiệm Ngôi Sao",
+    "1000058": "Chòi Thợ Xây O.T.T.O",
+    "4000042": "Xe Lăn Đại Bác"
 };
 
-let globalInterval = null; // Quản lý bộ đếm thời gian tránh bị trùng lặp
+let globalInterval = null;
 
-function getNameFromId(id, defaultType) {
-    return ID_DICTIONARY[id] || `${defaultType} (ID: ${id})`;
+function fetchName(id, type) {
+    return DICTIONARY[id] || `${type} (ID: ${id})`;
 }
 
 function formatCountdown(targetTimestamp) {
@@ -28,7 +37,7 @@ function formatCountdown(targetTimestamp) {
     const seconds = distance % 60;
 
     let result = "";
-    if (days > 0) result += `${days}ngày `;
+    if (days > 0) result += `${days}d `;
     if (hours > 0 || days > 0) result += `${hours}h `;
     result += `${minutes}m ${seconds}s`;
     
@@ -36,106 +45,104 @@ function formatCountdown(targetTimestamp) {
 }
 
 function startGlobalTimer() {
-    if (globalInterval) clearInterval(globalInterval); // Xóa bộ đếm cũ nếu có
+    if (globalInterval) clearInterval(globalInterval);
     globalInterval = setInterval(() => {
-        const timers = document.querySelectorAll('.timer');
-        timers.forEach(timer => {
+        document.querySelectorAll('.item-time').forEach(timer => {
             const target = parseInt(timer.getAttribute('data-target'));
             timer.textContent = formatCountdown(target);
+            if (timer.textContent.includes("Hoàn thành")) {
+                timer.style.color = "var(--success)";
+                timer.style.background = "rgba(16, 185, 129, 0.1)";
+            }
         });
     }, 1000);
 }
 
-function generateHtmlList(arrayData, baseTimestamp, idLabel, containerId) {
-    const container = document.getElementById(containerId);
+function buildListMarkup(arrayData, baseTimestamp, typeLabel, elementId) {
+    const container = document.getElementById(elementId);
     container.innerHTML = "";
 
-    const upgradingItems = arrayData ? arrayData.filter(item => item.timer !== undefined) : [];
+    // Lọc các item đang thực sự nâng cấp (có thuộc tính 'timer')
+    const activeItems = arrayData ? arrayData.filter(item => item.timer !== undefined) : [];
 
-    if (upgradingItems.length === 0) {
-        container.innerHTML = "<div class='no-upgrade'>Tất cả đang rảnh rỗi</div>";
+    if (activeItems.length === 0) {
+        container.innerHTML = "<div class='status-empty'>Tất cả đang rảnh rỗi</div>";
         return;
     }
 
-    upgradingItems.forEach(item => {
+    activeItems.forEach(item => {
         const targetTimestamp = baseTimestamp + item.timer;
-        const itemDiv = document.createElement('div');
-        itemDiv.className = 'item';
+        
+        const wrapper = document.createElement('div');
+        wrapper.className = 'list-item';
 
-        const nameSpan = document.createElement('span');
-        nameSpan.innerHTML = `<strong>${getNameFromId(item.data, idLabel)}</strong> (Cấp ${item.lvl})`;
+        let extraLabel = "";
+        if (item.gear_up) extraLabel = " <span style='color:var(--gold); font-size:11px;'>[Cải Tiến]</span>";
 
-        const timerSpan = document.createElement('span');
-        timerSpan.className = 'timer';
-        timerSpan.setAttribute('data-target', targetTimestamp);
-        timerSpan.textContent = formatCountdown(targetTimestamp);
-
-        itemDiv.appendChild(nameSpan);
-        itemDiv.appendChild(timerSpan);
-        container.appendChild(itemDiv);
+        wrapper.innerHTML = `
+            <div class="item-info">
+                <span class="item-name">${fetchName(item.data, typeLabel)}${extraLabel}<span class="item-lvl">Cấp ${item.lvl}</span></span>
+                <span class="item-time" data-target="${targetTimestamp}">${formatCountdown(targetTimestamp)}</span>
+            </div>
+        `;
+        container.appendChild(wrapper);
     });
 }
 
-// HÀM KHỞI CHẠY CHÍNH
-async function initTracker() {
+async function startDashboard() {
     try {
         let data;
-        // Kiểm tra xem bộ nhớ trình duyệt có sẵn dữ liệu dán vào trước đó không
-        const savedData = localStorage.getItem('coc_custom_json');
+        const localStore = localStorage.getItem('coc_custom_json');
         
-        if (savedData) {
-            data = JSON.parse(savedData);
-            document.getElementById('json-input').value = savedData; // Giữ lại text trong ô dán
+        if (localStore) {
+            data = JSON.parse(localStore);
+            document.getElementById('json-input').value = localStore;
         } else {
-            // Nếu không có, tải file data.json mặc định từ GitHub
             const response = await fetch('data.json');
             data = await response.json();
         }
         
+        // Hiển thị mã Tag tài khoản lên Header
+        if(data.tag) document.getElementById('account-tag').textContent = `Mã tài khoản: ${data.tag}`;
+        
         const baseTime = data.timestamp;
 
-        // Tiến hành vẽ giao diện
-        generateHtmlList(data.buildings, baseTime, "Công trình", "home-builders");
-        const labItems = [...(data.units || []), ...(data.spells || []), ...(data.siege_machines || [])];
-        generateHtmlList(labItems, baseTime, "Nghiên cứu", "home-lab");
-        generateHtmlList(data.pets, baseTime, "Linh thú", "home-pets");
-
-        generateHtmlList(data.buildings2, baseTime, "Công trình BB", "builder-builders");
-        generateHtmlList(data.units2, baseTime, "Lính BB", "builder-lab");
+        // Đổ dữ liệu ra các thẻ tương ứng
+        buildListMarkup(data.buildings, baseTime, "Công trình", "home-builders");
+        
+        const combinedLab = [...(data.units || []), ...(data.spells || []), ...(data.siege_machines || [])];
+        buildListMarkup(combinedLab, baseTime, "Nghiên cứu", "home-lab");
+        
+        buildListMarkup(data.pets, baseTime, "Linh thú", "home-pets");
+        buildListMarkup(data.buildings2, baseTime, "Công trình BB", "builder-builders");
+        buildListMarkup(data.units2, baseTime, "Lính BB", "builder-lab");
 
         startGlobalTimer();
 
     } catch (error) {
-        console.error("Lỗi:", error);
-        alert("Có lỗi khi đọc dữ liệu! Hãy kiểm tra lại mã định dạng JSON.");
+        console.error(error);
+        alert("Lỗi phân tích cú pháp dữ liệu JSON!");
     }
 }
 
-// HÀM XỬ LÝ KHI BẤM NÚT "CẬP NHẬT DỮ LIỆU"
 function saveNewJson() {
-    const rawInput = document.getElementById('json-input').value.trim();
-    if (!rawInput) {
-        alert("Vui lòng dán mã dữ liệu JSON vào ô trống!");
-        return;
-    }
+    const stringInput = document.getElementById('json-input').value.trim();
+    if (!stringInput) return alert("Vui lòng không để trống ô dán dữ liệu!");
     try {
-        // Kiểm tra xem chuỗi nhập vào có đúng chuẩn cấu trúc JSON không
-        JSON.parse(rawInput);
-        // Lưu vào bộ nhớ máy
-        localStorage.setItem('coc_custom_json', rawInput);
-        alert("Đã cập nhật và lưu dữ liệu mới thành công!");
-        initTracker(); // Tải lại bảng theo dõi ngay lập tức
+        JSON.parse(stringInput);
+        localStorage.setItem('coc_custom_json', stringInput);
+        alert("Đã lưu dữ liệu mới và dịch chuẩn thuật ngữ!");
+        startDashboard();
     } catch (e) {
-        alert("Mã JSON sai cú pháp hoặc bị thiếu dấu! Hãy kiểm tra lại.");
+        alert("Cú pháp JSON không hợp lệ, hãy kiểm tra lại dấu đóng mở ngoặc!");
     }
 }
 
-// HÀM XỬ LÝ KHI BẤM NÚT ĐỂ QUAY VỀ MẶC ĐỊNH
 function clearLocalData() {
     localStorage.removeItem('coc_custom_json');
     document.getElementById('json-input').value = "";
-    alert("Đã xóa dữ liệu lưu tạm. Trang web sẽ dùng lại file data.json gốc trên GitHub!");
-    initTracker();
+    alert("Đã reset về file dữ liệu gốc trên GitHub!");
+    startDashboard();
 }
 
-window.onload = initTracker;
+window.onload = startDashboard;
