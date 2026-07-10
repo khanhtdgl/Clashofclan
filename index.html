@@ -3,300 +3,121 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CoC Phòng Giám Sát Tiến Độ</title>
+    <title>CoC Upgrade Tracker Pro</title>
     <style>
-        :root {
-            --bg-body: #090d16;
-            --bg-card: #131926;
-            --bg-item: #1b2336;
-            --border: #26334d;
-            --gold: #ffb703;
-            --gold-glow: rgba(255, 183, 3, 0.15);
-            --elixir: #ff00aa;
-            --dark-elixir: #00e5ff;
-            --text-main: #f1f5f9;
-            --text-muted: #64748b;
-            --danger: #ff4757;
-            --success: #2ed573;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            background-color: var(--bg-body);
-            color: var(--text-main);
-            margin: 0;
-            padding: 20px;
-        }
-
-        .container {
-            max-width: 1000px;
-            margin: 0 auto;
-        }
-
-        header {
-            text-align: center;
-            margin-bottom: 30px;
-            padding: 20px;
-            background: linear-gradient(135deg, #1e293b, #0f172a);
-            border-radius: 16px;
-            border: 1px solid var(--border);
-        }
-
-        header h1 {
-            margin: 0;
-            font-size: 26px;
-            letter-spacing: 2px;
-            color: var(--gold);
-            text-transform: uppercase;
-            text-shadow: 0 0 10px var(--gold-glow);
-        }
-
-        .player-tag {
-            display: inline-block;
-            margin-top: 8px;
-            font-family: monospace;
-            background: #000;
-            padding: 4px 12px;
-            border-radius: 20px;
-            color: var(--dark-elixir);
-            font-size: 14px;
-            border: 1px solid #1e293b;
-        }
-
-        .section-title {
-            font-size: 18px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin: 30px 0 15px 0;
-            color: var(--text-main);
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .section-title::after {
-            content: '';
-            flex: 1;
-            height: 1px;
-            background: var(--border);
-        }
-
-        .grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 20px;
-        }
-
-        .card {
-            background-color: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: 14px;
-            padding: 20px;
-            box-shadow: 0 10px 25px -5px rgba(0,0,0,0.3);
-        }
-
-        .card-header {
-            font-size: 14px;
-            font-weight: 700;
-            text-transform: uppercase;
-            color: var(--text-muted);
-            margin-bottom: 15px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .card-header .dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background-color: var(--gold);
-        }
-        .card.lab .dot { background-color: var(--elixir); }
-        .card.pet .dot { background-color: var(--dark-elixir); }
-
-        .item-row {
-            background-color: var(--bg-item);
-            border: 1px solid rgba(255,255,255,0.02);
-            border-radius: 10px;
-            padding: 12px 16px;
-            margin-bottom: 12px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            transition: transform 0.2s;
-        }
-
-        .item-row:hover {
-            transform: translateX(3px);
-            border-color: rgba(255,255,255,0.08);
-        }
-
-        .item-meta {
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-        }
-
-        .item-name-box {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .item-name {
-            font-weight: 600;
-            color: #fff;
-            font-size: 14px;
-        }
-
-        .btn-edit {
-            background: none;
-            border: none;
-            color: var(--text-muted);
-            cursor: pointer;
-            font-size: 11px;
-            padding: 2px 6px;
-            border-radius: 4px;
-            background: rgba(255,255,255,0.05);
-        }
-        .btn-edit:hover {
-            color: var(--gold);
-            background: rgba(255,255,255,0.1);
-        }
-
-        .badge-lvl {
-            background-color: #0f172a;
-            color: var(--gold);
-            border: 1px solid rgba(255,183,3,0.3);
-            font-size: 11px;
-            padding: 1px 6px;
-            border-radius: 6px;
-            font-weight: bold;
-        }
-
-        .countdown {
-            font-family: 'Courier New', Courier, monospace;
-            font-weight: 700;
-            font-size: 14px;
-            color: var(--danger);
-            background: rgba(255, 71, 87, 0.1);
-            border: 1px solid rgba(255, 71, 87, 0.15);
-            padding: 4px 10px;
-            border-radius: 6px;
-            text-shadow: 0 0 5px rgba(255, 71, 87, 0.2);
-            white-space: nowrap;
-        }
-
-        .empty-state {
-            color: var(--text-muted);
-            text-align: center;
-            font-style: italic;
-            font-size: 13px;
-            padding: 20px 0;
-        }
-
-        /* KHU VỰC PANEL DATA */
-        .data-panel {
-            margin-top: 50px;
-            background-color: var(--bg-card);
-            border: 1px dashed var(--border);
-            border-radius: 14px;
-            padding: 20px;
-        }
-
-        .data-panel textarea {
-            width: 100%;
-            background-color: var(--bg-body);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            color: var(--success);
-            padding: 12px;
-            font-family: monospace;
-            font-size: 12px;
-            box-sizing: border-box;
-        }
-
-        .btn-group {
-            margin-top: 12px;
-            display: flex;
-            gap: 10px;
-        }
-
-        button.main-btn {
-            background-color: var(--gold);
-            color: #000;
-            border: none;
-            padding: 10px 20px;
-            font-weight: 700;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 13px;
-        }
-        button.main-btn:hover { opacity: 0.9; }
-
-        button.sub-btn {
-            background: transparent;
-            color: var(--text-muted);
-            border: 1px solid var(--border);
-            padding: 10px 20px;
-            font-weight: 600;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 13px;
-        }
-        button.sub-btn:hover { color: #fff; background: rgba(255,255,255,0.02); }
+        :root { --accent: #ffcc00; --bg: #121212; --card: #1e1e1e; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: #fff; margin: 0; padding: 20px; }
+        .container { max-width: 600px; margin: auto; }
+        textarea { width: 100%; height: 120px; background: #2a2a2a; color: #fff; border: 1px solid #444; border-radius: 8px; padding: 10px; box-sizing: border-box; }
+        .btns { display: flex; gap: 10px; margin-top: 10px; }
+        button { flex: 1; padding: 12px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        .btn-main { background: var(--accent); color: #000; }
+        .btn-clear { background: #555; color: #fff; }
+        .card { background: var(--card); padding: 15px; margin: 10px 0; border-radius: 10px; border-left: 5px solid var(--accent); display: flex; justify-content: space-between; align-items: center; }
+        .timer { font-weight: bold; color: #00ff00; font-family: monospace; font-size: 1.1em; }
+        h2 { border-bottom: 2px solid #333; padding-bottom: 10px; }
     </style>
 </head>
 <body>
-
     <div class="container">
-        <header>
-            <h1 id="web-title">Hệ Thống Giám Sát Tiến Độ CoC</h1>
-            <div class="player-tag" id="player-tag">#PLAYER_TAG</div>
-        </header>
-
-        <!-- LÀNG CHÍNH -->
-        <div class="section-title">Làng Chính (Home Village)</div>
-        <div class="grid">
-            <div class="card">
-                <div class="card-header"><span class="dot"></span>Thợ xây đang làm việc</div>
-                <div id="box-home-builders"></div>
-            </div>
-            <div class="card lab">
-                <div class="card-header"><span class="dot"></span>Phòng Thí Nghiệm</div>
-                <div id="box-home-lab"></div>
-            </div>
-            <div class="card pet">
-                <div class="card-header"><span class="dot"></span>Nhà Linh Thú</div>
-                <div id="box-home-pets"></div>
-            </div>
+        <h1>CoC Upgrade Tracker</h1>
+        <textarea id="jsonInput" placeholder="Dán JSON từ game vào đây..."></textarea>
+        <div class="btns">
+            <button class="btn-main" onclick="handlePaste()">Cập nhật dữ liệu</button>
+            <button class="btn-clear" onclick="clearData()">Xóa dữ liệu cũ</button>
         </div>
-
-        <!-- LÀNG THỢ XÂY -->
-        <div class="section-title">Làng Thợ Xây (Builder Base)</div>
-        <div class="grid">
-            <div class="card">
-                <div class="card-header"><span class="dot"></span>Thợ xây công trình</div>
-                <div id="box-builder-builders"></div>
-            </div>
-            <div class="card lab">
-                <div class="card-header"><span class="dot"></span>Phòng Thí Nghiệm Sao</div>
-                <div id="box-builder-lab"></div>
-            </div>
-        </div>
-
-        <!-- PANEL UPDATE DỮ LIỆU -->
-        <div class="data-panel">
-            <h3 style="margin-top:0; font-size:15px; color: var(--gold);">Cập nhật dữ liệu tài khoản (JSON)</h3>
-            <textarea id="json-textarea" rows="4" placeholder="Dán chuỗi dữ liệu JSON mới vào đây..."></textarea>
-            <div class="btn-group">
-                <button class="main-btn" onclick="updateJsonData()">Cập Nhật Ngay</button>
-                <button class="sub-btn" onclick="resetToDefault()">Xóa & Dùng File Gốc</button>
-            </div>
-        </div>
+        <div id="list"></div>
     </div>
 
-    <script src="script.js"></script>
+    <script>
+        // Bảng tra cứu tên (Bạn có thể thêm ID vào đây)
+        const nameMap = {
+            "1000003": "Pháo", "1000013": "Tháp Cung Thủ", "1000026": "Kho Vàng", 
+            "1000068": "X-Bow", "73000007": "Linh Thú (Diggy)", "1000039": "Pháo Builder Base",
+            "4000110": "Lính (Unit)"
+        };
+
+        let activeItems = [];
+
+        // 1. Tự động tải dữ liệu cũ khi mở trang
+        window.onload = () => {
+            const saved = localStorage.getItem('coc_data');
+            if (saved) {
+                document.getElementById('jsonInput').value = saved;
+                processJSON(saved);
+            }
+        };
+
+        // 2. Xử lý khi nhấn nút
+        function handlePaste() {
+            const raw = document.getElementById('jsonInput').value;
+            if(!raw) return;
+            localStorage.setItem('coc_data', raw);
+            processJSON(raw);
+        }
+
+        // 3. Xóa dữ liệu
+        function clearData() {
+            localStorage.removeItem('coc_data');
+            location.reload();
+        }
+
+        // 4. Phân tích dữ liệu
+        function processJSON(raw) {
+            try {
+                const data = JSON.parse(raw);
+                activeItems = [];
+                const categories = ['buildings', 'buildings2', 'pets', 'units2'];
+                
+                categories.forEach(cat => {
+                    if (data[cat]) {
+                        data[cat].forEach(item => {
+                            if (item.timer) {
+                                activeItems.push({
+                                    name: nameMap[item.data] || `ID: ${item.data}`,
+                                    lvl: item.lvl,
+                                    timer: item.timer
+                                });
+                            }
+                        });
+                    }
+                });
+
+                // Sắp xếp: Thời gian nhỏ nhất (sắp xong) lên đầu
+                activeItems.sort((a, b) => a.timer - b.timer);
+                render();
+            } catch(e) { alert("JSON lỗi, hãy kiểm tra lại!"); }
+        }
+
+        // 5. Hiển thị
+        function render() {
+            const listDiv = document.getElementById('list');
+            listDiv.innerHTML = activeItems.length ? '<h2>Đang nâng cấp:</h2>' : '<p>Không có công trình nào.</p>';
+            
+            activeItems.forEach((item, index) => {
+                const div = document.createElement('div');
+                div.className = 'card';
+                div.innerHTML = `<div><strong>${item.name}</strong> (Lv.${item.lvl})</div><div class="timer" id="timer-${index}">...</div>`;
+                listDiv.appendChild(div);
+            });
+        }
+
+        // 6. Đếm ngược
+        setInterval(() => {
+            activeItems.forEach((item, index) => {
+                if (item.timer > 0) {
+                    item.timer--;
+                    const h = Math.floor(item.timer / 3600);
+                    const m = Math.floor((item.timer % 3600) / 60);
+                    const s = item.timer % 60;
+                    const el = document.getElementById(`timer-${index}`);
+                    if (el) el.innerText = `${h}h ${m}m ${s}s`;
+                } else {
+                    const el = document.getElementById(`timer-${index}`);
+                    if (el) el.innerText = "Xong!";
+                }
+            });
+        }, 1000);
+    </script>
 </body>
 </html>
